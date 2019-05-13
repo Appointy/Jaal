@@ -17,6 +17,17 @@ type Object struct {
 	key string
 }
 
+// Key registers the key field on an object. The field should be specified by the name of the graphql field.
+// For example, for an object User:
+//   type struct User {
+//	   UserKey int64
+//   }
+// The key will be registered as:
+// object.Key("userKey")
+func (s *Object) Key(f string) {
+	s.key = f
+}
+
 // A Methods map represents the set of methods exposed on a Object.
 type Methods map[string]*method
 
