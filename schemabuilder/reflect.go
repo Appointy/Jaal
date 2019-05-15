@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"reflect"
+	"strings"
 	"unicode"
 
 	"go.appointy.com/appointy/jaal/graphql"
@@ -31,7 +32,16 @@ func parseGraphQLFieldInfo(field reflect.StructField) (*graphQLFieldInfo, error)
 		return &graphQLFieldInfo{Skipped: true}, nil
 	}
 
-	name := makeGraphql(field.Name)
+	tags := strings.Split(field.Tag.Get("json"), ",")
+	var name string
+	if len(tags) > 0 {
+		name = tags[0]
+	}
+	if name == "-" {
+		return &graphQLFieldInfo{Skipped: true}, nil
+	}
+
+	name = makeGraphql(field.Name)
 
 	var key bool
 	var optional bool

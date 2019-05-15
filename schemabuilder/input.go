@@ -450,3 +450,19 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		},
 	},
 }
+
+//TODO:
+/*
+Add GraphQL scalars : ID, String, Int, Float, Boolean, Enum
+Add input objects: Register input objects like Object registration - like json or add each field
+Interface Support :
+Directives support :
+
+
+
+=============================================
+Protocol Buffers to GraphQL Schema generation
+protoc-gen-start
+tagging
+
+*/

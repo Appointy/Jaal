@@ -25,6 +25,31 @@ func RegisterWellKnownTypes() {
 	RegisterDuration()
 	RegisterTimestamp()
 	RegisterEmpty()
+	RegisterStringStringMap()
+}
+
+// RegisterStringStringMap registers the map[string]string as a scalar
+func RegisterStringStringMap() {
+	typ := reflect.TypeOf(map[string]string{})
+	schemabuilder.RegisterScalar(typ, "Metadata", func(value interface{}, target reflect.Value) error {
+		v, ok := value.(string)
+		if !ok {
+			return errors.New("invalid type expected a string")
+		}
+
+		unq, err := unquote(v)
+		if err != nil {
+			return err
+		}
+
+		data := make(map[string]string, 10)
+		if err := json.Unmarshal([]byte(unq), &data); err != nil {
+			return err
+		}
+
+		target.Set(reflect.ValueOf(data))
+		return nil
+	})
 }
 
 // RegisterEmpty registers empty as an scalar type
