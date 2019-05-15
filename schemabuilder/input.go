@@ -1,11 +1,9 @@
 package schemabuilder
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"reflect"
-	"time"
 
 	"go.appointy.com/appointy/jaal/graphql"
 	"go.appointy.com/appointy/jaal/internal"
@@ -421,31 +419,14 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 			return nil
 		},
 	},
-	reflect.TypeOf([]byte{}): {
+	reflect.TypeOf(ID{Value: ""}): {
 		FromJSON: func(value interface{}, dest reflect.Value) error {
-			asString, ok := value.(string)
+			v, ok := value.(string)
 			if !ok {
-				return errors.New("not a string")
+				return errors.New("not a string type")
 			}
-			bytes, err := base64.StdEncoding.DecodeString(asString)
-			if err != nil {
-				return err
-			}
-			dest.Set(reflect.ValueOf(bytes).Convert(dest.Type()))
-			return nil
-		},
-	},
-	reflect.TypeOf(time.Time{}): {
-		FromJSON: func(value interface{}, dest reflect.Value) error {
-			asString, ok := value.(string)
-			if !ok {
-				return errors.New("not a string")
-			}
-			asTime, err := time.Parse(time.RFC3339, asString)
-			if err != nil {
-				return errors.New("not an iso8601 time")
-			}
-			dest.Set(reflect.ValueOf(asTime).Convert(dest.Type()))
+
+			dest.Field(0).SetString(v)
 			return nil
 		},
 	},

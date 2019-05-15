@@ -3,7 +3,6 @@ package schemabuilder
 import (
 	"fmt"
 	"reflect"
-	"time"
 
 	"go.appointy.com/appointy/jaal/graphql"
 	"go.appointy.com/appointy/jaal/internal"
@@ -100,20 +99,19 @@ func getScalar(typ reflect.Type) (string, bool) {
 }
 
 var scalars = map[reflect.Type]string{
-	reflect.TypeOf(bool(false)): "bool",
-	reflect.TypeOf(int(0)):      "int",
-	reflect.TypeOf(int8(0)):     "int8",
-	reflect.TypeOf(int16(0)):    "int16",
-	reflect.TypeOf(int32(0)):    "int32",
-	reflect.TypeOf(int64(0)):    "int64",
-	reflect.TypeOf(uint(0)):     "uint",
-	reflect.TypeOf(uint8(0)):    "uint8",
-	reflect.TypeOf(uint16(0)):   "uint16",
-	reflect.TypeOf(uint32(0)):   "uint32",
-	reflect.TypeOf(uint64(0)):   "uint64",
-	reflect.TypeOf(float32(0)):  "float32",
-	reflect.TypeOf(float64(0)):  "float64",
-	reflect.TypeOf(string("")):  "string",
-	reflect.TypeOf(time.Time{}): "Time",
-	reflect.TypeOf([]byte{}):    "bytes",
+	reflect.TypeOf(bool(false)):   "Boolean",
+	reflect.TypeOf(int(0)):        "Int",
+	reflect.TypeOf(int8(0)):       "Int",
+	reflect.TypeOf(int16(0)):      "Int",
+	reflect.TypeOf(int32(0)):      "Int",
+	reflect.TypeOf(int64(0)):      "Int",
+	reflect.TypeOf(uint(0)):       "Int",
+	reflect.TypeOf(uint8(0)):      "Int",
+	reflect.TypeOf(uint16(0)):     "Int",
+	reflect.TypeOf(uint32(0)):     "Int",
+	reflect.TypeOf(uint64(0)):     "Int",
+	reflect.TypeOf(float32(0)):    "Float",
+	reflect.TypeOf(float64(0)):    "Float",
+	reflect.TypeOf(string("")):    "String",
+	reflect.TypeOf(ID{Value: ""}): "ID",
 }

@@ -168,3 +168,12 @@ func RegisterScalar(typ reflect.Type, name string, uf UnmarshalFunc) error {
 
 	return nil
 }
+
+type ID struct {
+	Value string
+}
+
+// Implement JSON Marshalling
+func (id ID) MarshalJSON() ([]byte, error) {
+	return strconv.AppendQuote(nil, string(id.Value)), nil
+}
