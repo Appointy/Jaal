@@ -19,8 +19,8 @@ type Schema struct {
 // NewSchema creates a new schema.
 func NewSchema() *Schema {
 	schema := &Schema{
-		objects: make(map[string]*Object),
-		inputObjects:make(map[string]*InputObject),
+		objects:      make(map[string]*Object),
+		inputObjects: make(map[string]*InputObject),
 	}
 
 	return schema
@@ -143,7 +143,7 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 		objects:      make(map[reflect.Type]*Object),
 		enumMappings: s.enumTypes,
 		typeCache:    make(map[reflect.Type]cachedType, 0),
-		inputObjects:make(map[reflect.Type]*InputObject,0),
+		inputObjects: make(map[reflect.Type]*InputObject, 0),
 	}
 
 	for _, object := range s.objects {
