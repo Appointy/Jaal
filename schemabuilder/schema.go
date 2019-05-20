@@ -11,14 +11,16 @@ import (
 // can be registered against the "Mutation" and "Query" objects in order to
 // build out a full GraphQL schema.
 type Schema struct {
-	objects   map[string]*Object
-	enumTypes map[reflect.Type]*EnumMapping
+	objects      map[string]*Object
+	enumTypes    map[reflect.Type]*EnumMapping
+	inputObjects map[string]*InputObject
 }
 
 // NewSchema creates a new schema.
 func NewSchema() *Schema {
 	schema := &Schema{
 		objects: make(map[string]*Object),
+		inputObjects:make(map[string]*InputObject),
 	}
 
 	return schema
@@ -101,6 +103,21 @@ func (s *Schema) Object(name string, typ interface{}) *Object {
 	return object
 }
 
+// InputObject registers a struct as inout object which can be passed as an argument to a query or mutation
+// We'll read through the fields of the struct and create argument parsers to fill the data from graphQL JSON input
+func (s *Schema) InputObject(name string, typ interface{}) {
+	if inputObject, ok := s.inputObjects[name]; ok {
+		if reflect.TypeOf(inputObject.Type) != reflect.TypeOf(typ) {
+			panic("re-registered input object with different type")
+		}
+	}
+	inputObject := &InputObject{
+		Name: name,
+		Type: typ,
+	}
+	s.inputObjects[name] = inputObject
+}
+
 type query struct{}
 
 // Query returns an Object struct that we can use to register all the top level
@@ -126,6 +143,7 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 		objects:      make(map[reflect.Type]*Object),
 		enumMappings: s.enumTypes,
 		typeCache:    make(map[reflect.Type]cachedType, 0),
+		inputObjects:make(map[reflect.Type]*InputObject,0),
 	}
 
 	for _, object := range s.objects {
@@ -139,6 +157,23 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 		}
 
 		sb.objects[typ] = object
+	}
+
+	// Build all the input objects before building schema and cache them
+	for _, inputObject := range s.inputObjects {
+		typ := reflect.TypeOf(inputObject.Type)
+		if typ.Kind() != reflect.Struct {
+			return nil, fmt.Errorf("inputObject.Type should be a struct, not %s", typ.String())
+		}
+
+		if _, ok := sb.inputObjects[typ]; ok {
+			return nil, fmt.Errorf("duplicate inputObject for %s", typ.String())
+		}
+
+		sb.inputObjects[typ] = inputObject
+		if _, _, err := sb.getStructObjectFields(typ); err != nil {
+			return nil, err
+		}
 	}
 
 	queryTyp, err := sb.getType(reflect.TypeOf(&query{}))

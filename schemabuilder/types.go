@@ -28,6 +28,12 @@ func (s *Object) Key(f string) {
 	s.key = f
 }
 
+// InputObject represents the input objects passed in queries and mutations
+type InputObject struct {
+	Name string
+	Type interface{}
+}
+
 // A Methods map represents the set of methods exposed on a Object.
 type Methods map[string]*method
 

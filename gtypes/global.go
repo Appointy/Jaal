@@ -37,13 +37,8 @@ func RegisterStringStringMap() {
 			return errors.New("invalid type expected a string")
 		}
 
-		unq, err := unquote(v)
-		if err != nil {
-			return err
-		}
-
 		data := make(map[string]string, 10)
-		if err := json.Unmarshal([]byte(unq), &data); err != nil {
+		if err := json.Unmarshal([]byte(v), &data); err != nil {
 			return err
 		}
 

@@ -138,7 +138,7 @@ func (funcCtx *funcContext) getArgParserAndTyp(sb *schemaBuilder, in []reflect.T
 	var argType graphql.Type
 	if len(in) > 0 && in[0] != selectionSetType {
 		var err error
-		if argParser, argType, err = sb.makeStructParser(in[0]); err != nil {
+		if argParser, argType, err = sb.makeInputObjectParser(in[0]); err != nil {
 			return nil, nil, in, fmt.Errorf("attempted to parse %s as arguments struct, but failed: %s", in[0].Name(), err.Error())
 		}
 		in = in[1:]

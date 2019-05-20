@@ -16,6 +16,7 @@ type schemaBuilder struct {
 	objects      map[reflect.Type]*Object
 	enumMappings map[reflect.Type]*EnumMapping
 	typeCache    map[reflect.Type]cachedType // typeCache maps Go types to GraphQL datatypes
+	inputObjects map[reflect.Type]*InputObject
 }
 
 // cachedType is a container for GraphQL datatype and the list of its fields
