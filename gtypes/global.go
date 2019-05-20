@@ -1,12 +1,12 @@
 package gtypes
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
 	"time"
-	"encoding/base64"
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -39,7 +39,7 @@ func RegisterStringStringMap() {
 		}
 
 		decodedValue, err := base64.StdEncoding.DecodeString(v)
-		if err!= nil{
+		if err != nil {
 			return err
 		}
 

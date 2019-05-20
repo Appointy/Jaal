@@ -30,9 +30,9 @@ func (s *Object) Key(f string) {
 
 // InputObject represents the input objects passed in queries and mutations
 type InputObject struct {
-	Name string
-	Type interface{}
-	Fields  map[string]interface{}
+	Name   string
+	Type   interface{}
+	Fields map[string]interface{}
 }
 
 // A Methods map represents the set of methods exposed on a Object.

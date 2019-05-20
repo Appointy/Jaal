@@ -12,9 +12,9 @@ import (
 )
 
 type channel struct {
-	Id    string
-	Name  string
-	Email string
+	Id       string
+	Name     string
+	Email    string
 	Metadata map[string]string
 }
 
@@ -74,7 +74,7 @@ func (s *server) schema() *graphql.Schema {
 	builder.Object("channel", channel{})
 
 	inputObject := builder.InputObject("createChannelReq", createChannelReq{})
-	inputObject.FieldFunc("id", func(in *createChannelReq,id schemabuilder.ID) {
+	inputObject.FieldFunc("id", func(in *createChannelReq, id schemabuilder.ID) {
 		in.Id = id.Value
 	})
 
