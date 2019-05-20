@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+	"encoding/base64"
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
@@ -37,8 +38,13 @@ func RegisterStringStringMap() {
 			return errors.New("invalid type expected a string")
 		}
 
+		decodedValue, err := base64.StdEncoding.DecodeString(v)
+		if err!= nil{
+			return err
+		}
+
 		data := make(map[string]string, 10)
-		if err := json.Unmarshal([]byte(v), &data); err != nil {
+		if err := json.Unmarshal(decodedValue, &data); err != nil {
 			return err
 		}
 

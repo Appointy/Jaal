@@ -32,6 +32,7 @@ func (s *Object) Key(f string) {
 type InputObject struct {
 	Name string
 	Type interface{}
+	Fields  map[string]interface{}
 }
 
 // A Methods map represents the set of methods exposed on a Object.
@@ -94,6 +95,10 @@ func (s *Object) FieldFunc(name string, f interface{}) {
 		panic("duplicate method")
 	}
 	s.Methods[name] = m
+}
+
+func (io *InputObject) FieldFunc(name string, f interface{}) {
+	io.Fields[name] = f
 }
 
 type UnmarshalFunc func(value interface{}, dest reflect.Value) error

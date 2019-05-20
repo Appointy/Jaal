@@ -105,17 +105,20 @@ func (s *Schema) Object(name string, typ interface{}) *Object {
 
 // InputObject registers a struct as inout object which can be passed as an argument to a query or mutation
 // We'll read through the fields of the struct and create argument parsers to fill the data from graphQL JSON input
-func (s *Schema) InputObject(name string, typ interface{}) {
+func (s *Schema) InputObject(name string, typ interface{}) *InputObject {
 	if inputObject, ok := s.inputObjects[name]; ok {
 		if reflect.TypeOf(inputObject.Type) != reflect.TypeOf(typ) {
 			panic("re-registered input object with different type")
 		}
 	}
 	inputObject := &InputObject{
-		Name: name,
-		Type: typ,
+		Name:   name,
+		Type:   typ,
+		Fields: map[string]interface{}{},
 	}
 	s.inputObjects[name] = inputObject
+
+	return inputObject
 }
 
 type query struct{}

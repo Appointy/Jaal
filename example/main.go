@@ -15,6 +15,7 @@ type channel struct {
 	Id    string
 	Name  string
 	Email string
+	Metadata map[string]string
 }
 
 type createChannelReq struct {
@@ -71,10 +72,16 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 func (s *server) schema() *graphql.Schema {
 	builder := schemabuilder.NewSchema()
 	builder.Object("channel", channel{})
-	builder.InputObject("createChannelReq", createChannelReq{})
+
+	inputObject := builder.InputObject("createChannelReq", createChannelReq{})
+	inputObject.FieldFunc("id", func(in *createChannelReq,id schemabuilder.ID) {
+		in.Id = id.Value
+	})
+
 	builder.InputObject("getChannelReq", getChannelReq{})
 
 	s.registerQuery(builder)
+	s.registerMutation(builder)
 
 	return builder.MustBuild()
 }
