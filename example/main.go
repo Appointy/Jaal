@@ -1,96 +1,69 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
-	"github.com/appointy/idgen"
+	"go.appointy.com/appointy/jaal/gtypes"
+
 	"go.appointy.com/appointy/jaal"
-	"go.appointy.com/appointy/jaal/graphql"
+
+	"github.com/appointy/idgen"
+	"go.appointy.com/appointy/jaal/example/pb"
 	"go.appointy.com/appointy/jaal/schemabuilder"
 )
 
-type channel struct {
-	Id       string
-	Name     string
-	Email    string
-	Resource resource
-	Variants []variant
-}
-
-type variant struct {
-	Id   string
-	Name string
-}
-
-type resource struct {
-	Id   string
-	Name string
-	Type ResourceType
-}
-
-type ResourceType int64
-
-const (
-	ZERO ResourceType = iota
-	ONE
-	TWO
-	THREE
-	FOUR
-)
-
-type createChannelReq struct {
-	Id       string
-	Name     string
-	Email    string
-	Resource resource
-	Variants []variant
-}
-
-type getChannelReq struct {
-	Id string
-}
-
-// server is our graphql server.
 type server struct {
-	channels []channel
-}
-
-// schema builds the graphql schema.
-func (s *server) schema() *graphql.Schema {
-	builder := schemabuilder.NewSchema()
-
-	s.registerEnum(builder)
-	s.registerMutation(builder)
-	s.registerCreateChannelReq(builder)
-	s.registerChannel(builder)
-	s.registerQuery(builder)
-	s.registerGetChannelReq(builder)
-
-	return builder.MustBuild()
+	classes []*pb.Class
 }
 
 func main() {
-	// Instantiate a server, build a server, and serve the schema on port 3000.
-	server := &server{
-		channels: []channel{
-			{
-				Name:  "Table",
-				Id:    idgen.New("ch"),
-				Email: "table@appointy.com",
-				Resource: resource{
-					Id:   idgen.New("res"),
-					Name: "channel",
-				},
-			},
-		},
+	s := server{
+		classes: []*pb.Class{},
 	}
+	s.classes = append(s.classes, &pb.Class{
+		Id:idgen.New("cls"),
+		Charge:&pb.Class_Lumpsum{Lumpsum:1000},
+	})
+	fmt.Println(s.classes[0])
 
-	fmt.Println(server)
 
-	schema := server.schema()
+	builder := schemabuilder.NewSchema()
+	pb.RegisterTypes(builder)
+	s.registerQuery(builder)
+	s.registerMutation(builder)
+	gtypes.RegisterStringStringMap()
+
+	schema := builder.MustBuild()
 	http.Handle("/graphql", jaal.HTTPHandler(schema))
 	fmt.Println("Running")
+	if err := http.ListenAndServe(":3000", nil); err != nil {
+		panic(err)
+	}
 
-	http.ListenAndServe(":3000", nil)
+}
+
+func (s *server) registerQuery(schema *schemabuilder.Schema) {
+	schema.Query().FieldFunc("class", func(ctx context.Context, args struct {
+		In *pb.GetClassReq
+	}) *pb.Class {
+		for _, class := range s.classes {
+			if class.Id == args.In.Id {
+				return class
+			}
+		}
+		return &pb.Class{}
+	})
+}
+
+func (s *server) registerMutation(schema *schemabuilder.Schema) {
+	schema.Mutation().FieldFunc("createClass", func(ctx context.Context, args struct {
+		In *pb.CreateClassReq
+	}) *pb.Class {
+		args.In.Class.Id = idgen.New("cls")
+		s.classes = append(s.classes, args.In.Class)
+
+		return args.In.Class
+	})
 }

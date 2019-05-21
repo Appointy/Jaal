@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
+	"github.com/appointy/idgen"
+	"go.appointy.com/appointy/jaal"
 	"go.appointy.com/appointy/jaal/schemabuilder"
 )
 
@@ -62,8 +66,33 @@ func (s *server) registerChannel(schema *schemabuilder.Schema) {
 }
 
 func (s *server) registerGetChannelReq(schema *schemabuilder.Schema) {
-	inputObject := schema.InputObject("getChannelReq",getChannelReq{})
+	inputObject := schema.InputObject("getChannelReq", getChannelReq{})
 	inputObject.FieldFunc("id", func(in *getChannelReq, id schemabuilder.ID) {
 		in.Id = id.Value
 	})
+}
+
+func main() {
+	// Instantiate a server, build a server, and serve the schema on port 3000.
+	server := &server{
+		channels: []channel{
+			{
+				Name:  "Table",
+				Id:    idgen.New("ch"),
+				Email: "table@appointy.com",
+				Resource: resource{
+					Id:   idgen.New("res"),
+					Name: "channel",
+				},
+			},
+		},
+	}
+
+	fmt.Println(server)
+
+	schema := server.schema()
+	http.Handle("/graphql", jaal.HTTPHandler(schema))
+	fmt.Println("Running")
+
+	http.ListenAndServe(":3000", nil)
 }
