@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"go.appointy.com/appointy/jaal/gtypes"
+	"go.appointy.com/appointy/jaal/introspection"
 
 	"go.appointy.com/appointy/jaal"
 
@@ -23,11 +24,10 @@ func main() {
 		classes: []*pb.Class{},
 	}
 	s.classes = append(s.classes, &pb.Class{
-		Id:idgen.New("cls"),
-		Charge:&pb.Class_Lumpsum{Lumpsum:1000},
+		Id:     idgen.New("cls"),
+		Charge: &pb.Class_Lumpsum{Lumpsum: 1000},
 	})
 	fmt.Println(s.classes[0])
-
 
 	builder := schemabuilder.NewSchema()
 	pb.RegisterTypes(builder)
@@ -36,6 +36,9 @@ func main() {
 	gtypes.RegisterStringStringMap()
 
 	schema := builder.MustBuild()
+
+	introspection.AddIntrospectionToSchema(schema)
+
 	http.Handle("/graphql", jaal.HTTPHandler(schema))
 	fmt.Println("Running")
 	if err := http.ListenAndServe(":3000", nil); err != nil {
