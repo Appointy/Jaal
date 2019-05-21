@@ -81,7 +81,6 @@ func (sb *schemaBuilder) makeStructParser(typ reflect.Type) (*argParser, graphql
 	}, argType, nil
 }
 
-
 // getStructObjectFields loops through a struct's fields and builds argParsers for all the struct's subfields.  These fields will then be used when we want
 // to create an instance of the original struct from JSON.
 func (sb *schemaBuilder) getStructObjectFields(typ reflect.Type) (*graphql.InputObject, map[string]argField, error) {
