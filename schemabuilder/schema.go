@@ -162,7 +162,6 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 		sb.objects[typ] = object
 	}
 
-	// Build all the input objects before building schema and cache them
 	for _, inputObject := range s.inputObjects {
 		typ := reflect.TypeOf(inputObject.Type)
 		if typ.Kind() != reflect.Struct {
@@ -174,9 +173,6 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 		}
 
 		sb.inputObjects[typ] = inputObject
-		if _, _, err := sb.getStructObjectFields(typ); err != nil {
-			return nil, err
-		}
 	}
 
 	queryTyp, err := sb.getType(reflect.TypeOf(&query{}))

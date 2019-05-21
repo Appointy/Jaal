@@ -81,20 +81,6 @@ func (sb *schemaBuilder) makeStructParser(typ reflect.Type) (*argParser, graphql
 	}, argType, nil
 }
 
-// makeInputObjectParser constructs an argParser for the passed in args struct i.e. the input struct which contains all the objects to be given as input. For eg:
-// obj.fieldFunc("name", func(ctx context.Context, args struct{
-// 	A createObjectRequest
-// }{}))
-func (sb *schemaBuilder) makeInputObjectParser(typ reflect.Type) (*argParser, graphql.Type, error) {
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i).Type
-		if _, ok := sb.typeCache[field]; !ok {
-			return nil, nil, fmt.Errorf("%s not registered as input object", field.Name())
-		}
-	}
-
-	return sb.makeStructParser(typ)
-}
 
 // getStructObjectFields loops through a struct's fields and builds argParsers for all the struct's subfields.  These fields will then be used when we want
 // to create an instance of the original struct from JSON.

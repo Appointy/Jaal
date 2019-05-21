@@ -15,7 +15,6 @@ type channel struct {
 	Id       string
 	Name     string
 	Email    string
-	Metadata map[string]string
 }
 
 type createChannelReq struct {
