@@ -122,7 +122,7 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 		Name:        typ.Name(),
 		InputFields: make(map[string]graphql.Type),
 	}
-	//TODO: While adding field in input object, add a validation of matching the types i.e. the target is same as thst of input object and is a ptr type
+	//TODO: While adding field in input object, add a validation of matching the types i.e. the target is same as that of input object and is a ptr type
 
 	for name, function := range obj.Fields {
 		field := reflect.StructField{Name: name}
@@ -172,7 +172,7 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 }
 
 func (sb *schemaBuilder) getInputFieldParser(typ reflect.Type) (*argParser, graphql.Type, error) {
-	//TODO: TEST THE ENUM, SLICE, STRUCT PARSERS
+	//TODO: TEST THE ENUM PARSERS
 
 	if sb.enumMappings[typ] != nil {
 		parser, argType := sb.getEnumArgParser(typ)
@@ -194,8 +194,41 @@ func (sb *schemaBuilder) getInputFieldParser(typ reflect.Type) (*argParser, grap
 		}
 		return parser, argType, nil
 	case reflect.Slice:
-		return sb.makeSliceParser(typ)
+		return sb.generateSliceParser(typ)
 	default:
 		return nil, nil, fmt.Errorf("bad arg type %s: should be struct, scalar, pointer, or a slice", typ)
 	}
+}
+
+// generateSliceParser generates the parser for a slice input by generating the parser for underlying object and using it to fill the values in list
+func (sb *schemaBuilder) generateSliceParser(typ reflect.Type) (*argParser, graphql.Type, error) {
+	inner, argType, err := sb.generateObjectParser(typ.Elem())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &argParser{
+		FromJSON: func(value interface{}, dest reflect.Value) error {
+			asSlice, ok := value.([]interface{})
+			if !ok {
+				return errors.New("not a list")
+			}
+
+			sourceTyp := typ.Elem()
+			sourceSlice := reflect.MakeSlice(typ, len(asSlice), len(asSlice))
+
+			for i, value := range asSlice {
+				source := reflect.New(sourceTyp).Elem()
+				if err := inner.FromJSON(value, source); err != nil {
+					return err
+				}
+				sourceSlice.Index(i).Set(source)
+			}
+
+			dest.Set(sourceSlice)
+
+			return nil
+		},
+		Type: typ,
+	}, &graphql.List{Type: argType}, nil
 }

@@ -16,6 +16,12 @@ type channel struct {
 	Name     string
 	Email    string
 	Resource resource
+	Variants []variant
+}
+
+type variant struct {
+	Id   string
+	Name string
 }
 
 type resource struct {
@@ -28,6 +34,7 @@ type createChannelReq struct {
 	Name     string
 	Email    string
 	Resource resource
+	Variants []variant
 }
 
 type getChannelReq struct {
@@ -64,13 +71,11 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 	}) channel {
 
 		ch := channel{
-			Name:  args.In.Name,
-			Id:    idgen.New("ch"),
-			Email: args.In.Email,
-			Resource: resource{
-				Id:   idgen.New("res"),
-				Name: "channel",
-			},
+			Name:     args.In.Name,
+			Id:       idgen.New("ch"),
+			Email:    args.In.Email,
+			Resource: args.In.Resource,
+			Variants: args.In.Variants,
 		}
 		s.channels = append(s.channels, ch)
 
@@ -90,12 +95,23 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 	inputObject.FieldFunc("resource", func(in *createChannelReq, resource resource) {
 		in.Resource = resource
 	})
+	inputObject.FieldFunc("variants", func(in *createChannelReq, variants []variant) {
+		in.Variants = variants
+	})
 
 	inputObject = schema.InputObject("resource", resource{})
 	inputObject.FieldFunc("id", func(in *resource, id schemabuilder.ID) {
 		in.Id = id.Value
 	})
 	inputObject.FieldFunc("name", func(in *resource, name string) {
+		in.Name = name
+	})
+
+	inputObject = schema.InputObject("variant", variant{})
+	inputObject.FieldFunc("id", func(in *variant, id schemabuilder.ID) {
+		in.Id = id.Value
+	})
+	inputObject.FieldFunc("name", func(in *variant, name string) {
 		in.Name = name
 	})
 

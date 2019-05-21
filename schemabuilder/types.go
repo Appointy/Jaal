@@ -97,10 +97,12 @@ func (s *Object) FieldFunc(name string, f interface{}) {
 	s.Methods[name] = m
 }
 
+// FieldFunc is used to expose the fields of an input object and determine the method to fill it
 func (io *InputObject) FieldFunc(name string, f interface{}) {
 	io.Fields[name] = f
 }
 
+// UnmarshalFunc is used to unmarshal scalar value from JSON
 type UnmarshalFunc func(value interface{}, dest reflect.Value) error
 
 // RegisterScalar is used to register custom scalars.
@@ -180,11 +182,12 @@ func RegisterScalar(typ reflect.Type, name string, uf UnmarshalFunc) error {
 	return nil
 }
 
+// ID is the graphql ID scalar
 type ID struct {
 	Value string
 }
 
-// Implement JSON Marshalling
+// MarshalJSON implements JSON Marshalling used to generate the output
 func (id ID) MarshalJSON() ([]byte, error) {
 	return strconv.AppendQuote(nil, string(id.Value)), nil
 }
