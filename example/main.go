@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
@@ -33,7 +32,8 @@ type resource struct {
 type ResourceType int64
 
 const (
-	ONE ResourceType = iota + 1
+	ZERO ResourceType = iota
+	ONE
 	TWO
 	THREE
 	FOUR
@@ -56,29 +56,16 @@ type server struct {
 	channels []channel
 }
 
-// registerQuery registers the root query type.
-func (s *server) registerQuery(schema *schemabuilder.Schema) {
-	obj := schema.Query()
-
-	obj.FieldFunc("channel", func(ctx context.Context, args struct {
-		In getChannelReq
-	}) channel {
-		for _, ch := range s.channels {
-			if ch.Id == args.In.Id {
-				return ch
-			}
-		}
-
-		return channel{}
-	})
-}
-
 // schema builds the graphql schema.
 func (s *server) schema() *graphql.Schema {
 	builder := schemabuilder.NewSchema()
 
 	s.registerEnum(builder)
 	s.registerMutation(builder)
+	s.registerCreateChannelReq(builder)
+	s.registerChannel(builder)
+	s.registerQuery(builder)
+	s.registerGetChannelReq(builder)
 
 	return builder.MustBuild()
 }

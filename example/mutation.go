@@ -25,7 +25,9 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 
 		return ch
 	})
+}
 
+func (s *server) registerCreateChannelReq(schema *schemabuilder.Schema) {
 	inputObject := schema.InputObject("createChannelReq", createChannelReq{})
 	inputObject.FieldFunc("id", func(in *createChannelReq, id schemabuilder.ID) {
 		in.Id = id.Value
@@ -61,11 +63,11 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 	inputObject.FieldFunc("name", func(in *variant, name string) {
 		in.Name = name
 	})
-
 }
 
 func (s *server) registerEnum(schema *schemabuilder.Schema) {
 	schema.Enum(ResourceType(1), map[string]interface{}{
+		"ZERO":  ResourceType(0),
 		"ONE":   ResourceType(1),
 		"TWO":   ResourceType(2),
 		"THREE": ResourceType(3),
