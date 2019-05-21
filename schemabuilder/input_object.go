@@ -172,8 +172,6 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 }
 
 func (sb *schemaBuilder) getInputFieldParser(typ reflect.Type) (*argParser, graphql.Type, error) {
-	//TODO: TEST THE ENUM PARSERS
-
 	if sb.enumMappings[typ] != nil {
 		parser, argType := sb.getEnumArgParser(typ)
 		return parser, argType, nil
