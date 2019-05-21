@@ -17,18 +17,6 @@ func (sb *schemaBuilder) makeInputObjectParser(typ reflect.Type) (*argParser, gr
 		return nil, nil, fmt.Errorf("expected struct but received type %s", typ.Name())
 	}
 
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i).Type
-
-		if field.Kind() == reflect.Ptr {
-			field = field.Elem()
-		}
-
-		if _, ok := sb.inputObjects[field]; !ok {
-			return nil, nil, fmt.Errorf("%s not registered as input object", field.Name())
-		}
-	}
-
 	argType, fields, err := sb.generateArgParser(typ)
 	if err != nil {
 		return nil, nil, err
@@ -104,6 +92,7 @@ func (sb *schemaBuilder) generateArgParser(typ reflect.Type) (*graphql.InputObje
 	return argType, fields, nil
 }
 
+// generateObjectParser generates the parser the object in args struct
 func (sb *schemaBuilder) generateObjectParser(typ reflect.Type) (*argParser, graphql.Type, error) {
 	if typ.Kind() == reflect.Ptr {
 		parser, argType, err := sb.generateObjectParserInner(typ.Elem())
@@ -117,17 +106,23 @@ func (sb *schemaBuilder) generateObjectParser(typ reflect.Type) (*argParser, gra
 	if err != nil {
 		return nil, nil, err
 	}
-	return parser, &graphql.NonNull{Type: argType}, nil
+	return parser, argType, nil
 }
 
+// generateObjectParserInner generates the parser without having to worry about pointer.
+// It creates parser using the registered fields and maps the value from http request into them.
 func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser, graphql.Type, error) {
+	if _, ok := sb.inputObjects[typ]; !ok {
+		return nil, nil, fmt.Errorf("%s not registered as input object", typ.Name())
+	}
+
 	obj := sb.inputObjects[typ]
 	fields := make(map[string]argField)
 	argType := &graphql.InputObject{
 		Name:        typ.Name(),
 		InputFields: make(map[string]graphql.Type),
 	}
-	//TODO: While adding field in input object, add a valiation of matching the types
+	//TODO: While adding field in input object, add a validation of matching the types i.e. the target is same as thst of input object and is a ptr type
 
 	for name, function := range obj.Fields {
 		field := reflect.StructField{Name: name}
@@ -177,6 +172,8 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 }
 
 func (sb *schemaBuilder) getInputFieldParser(typ reflect.Type) (*argParser, graphql.Type, error) {
+	//TODO: TEST THE ENUM, SLICE, STRUCT PARSERS
+
 	if sb.enumMappings[typ] != nil {
 		parser, argType := sb.getEnumArgParser(typ)
 		return parser, argType, nil

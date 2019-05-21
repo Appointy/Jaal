@@ -15,12 +15,19 @@ type channel struct {
 	Id       string
 	Name     string
 	Email    string
+	Resource resource
+}
+
+type resource struct {
+	Id   string
+	Name string
 }
 
 type createChannelReq struct {
-	Id    string
-	Name  string
-	Email string
+	Id       string
+	Name     string
+	Email    string
+	Resource resource
 }
 
 type getChannelReq struct {
@@ -60,11 +67,38 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 			Name:  args.In.Name,
 			Id:    idgen.New("ch"),
 			Email: args.In.Email,
+			Resource: resource{
+				Id:   idgen.New("res"),
+				Name: "channel",
+			},
 		}
 		s.channels = append(s.channels, ch)
 
 		return ch
 	})
+
+	inputObject := schema.InputObject("createChannelReq", createChannelReq{})
+	inputObject.FieldFunc("id", func(in *createChannelReq, id schemabuilder.ID) {
+		in.Id = id.Value
+	})
+	inputObject.FieldFunc("name", func(in *createChannelReq, name string) {
+		in.Name = name
+	})
+	inputObject.FieldFunc("email", func(in *createChannelReq, email string) {
+		in.Email = email
+	})
+	inputObject.FieldFunc("resource", func(in *createChannelReq, resource resource) {
+		in.Resource = resource
+	})
+
+	inputObject = schema.InputObject("resource", resource{})
+	inputObject.FieldFunc("id", func(in *resource, id schemabuilder.ID) {
+		in.Id = id.Value
+	})
+	inputObject.FieldFunc("name", func(in *resource, name string) {
+		in.Name = name
+	})
+
 }
 
 // schema builds the graphql schema.
@@ -72,14 +106,8 @@ func (s *server) schema() *graphql.Schema {
 	builder := schemabuilder.NewSchema()
 	builder.Object("channel", channel{})
 
-	inputObject := builder.InputObject("createChannelReq", createChannelReq{})
-	inputObject.FieldFunc("id", func(in *createChannelReq, id schemabuilder.ID) {
-		in.Id = id.Value
-	})
-
 	builder.InputObject("getChannelReq", getChannelReq{})
 
-	s.registerQuery(builder)
 	s.registerMutation(builder)
 
 	return builder.MustBuild()
@@ -93,6 +121,10 @@ func main() {
 				Name:  "Table",
 				Id:    idgen.New("ch"),
 				Email: "table@appointy.com",
+				Resource: resource{
+					Id:   idgen.New("res"),
+					Name: "channel",
+				},
 			},
 		},
 	}
