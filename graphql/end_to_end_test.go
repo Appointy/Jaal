@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.appointy.com/appointy/jaal/graphql"
+	"go.appointy.com/appointy/jaal/internal"
 	"go.appointy.com/appointy/jaal/schemabuilder"
 )
 
@@ -107,5 +108,140 @@ func TestInterface(t *testing.T) {
 			},
 		},
 	}, val)
+
+}
+
+func TestEnum(t *testing.T) {
+	schema := schemabuilder.NewSchema()
+
+	type enumType int32
+	type enumType2 float64
+
+	schema.Enum(enumType(1), map[string]interface{}{
+		"firstField":  enumType(1),
+		"secondField": enumType(2),
+		"thirdField":  enumType(3),
+	})
+	schema.Enum(enumType2(1.2), map[string]float64{
+		"this": float64(1.2),
+		"is":   float64(3.2),
+		"a":    float64(4.3),
+		"map":  float64(5.3),
+	})
+
+	query := schema.Query()
+	query.FieldFunc("inner", func(args struct {
+		EnumField enumType
+	}) enumType {
+		return args.EnumField
+	})
+	query.FieldFunc("inner2", func(args struct {
+		EnumField2 enumType2
+	}) enumType2 {
+		return args.EnumField2
+	})
+
+	query.FieldFunc("optional", func(args struct {
+		EnumField *enumType
+	}) enumType {
+		if args.EnumField != nil {
+			return *args.EnumField
+		} else {
+			return enumType(4)
+		}
+	})
+
+	query.FieldFunc("pointerret", func(args struct {
+		EnumField *enumType
+	}) *enumType {
+		return args.EnumField
+	})
+
+	builtSchema := schema.MustBuild()
+
+	q, err := graphql.Parse(`
+		{
+			inner(enumField: firstField)
+		}
+		`, nil)
+	if err != nil {
+		panic(err)
+	}
+	if err := graphql.ValidateQuery(context.Background(), builtSchema.Query, q.SelectionSet); err != nil {
+		t.Error(err)
+	}
+
+	e := graphql.Executor{}
+	val, err := e.Execute(context.Background(), builtSchema.Query, nil, q)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"inner": "firstField",
+	}, internal.AsJSON(val))
+
+	q, err = graphql.Parse(`
+		{
+			inner2(enumField2: this)
+		}
+		`, nil)
+	if err != nil {
+		panic(err)
+	}
+	if err := graphql.ValidateQuery(context.Background(), builtSchema.Query, q.SelectionSet); err != nil {
+		t.Error(err)
+	}
+
+	val, err = e.Execute(context.Background(), builtSchema.Query, nil, q)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"inner2": "this",
+	}, internal.AsJSON(val))
+
+	q, err = graphql.Parse(`
+		{
+			inner(enumField: wrongField)
+		}
+		`, nil)
+	if err != nil {
+		panic(err)
+	}
+	if err := graphql.ValidateQuery(context.Background(), builtSchema.Query, q.SelectionSet); err == nil {
+		t.Error(err)
+	}
+
+	q, err = graphql.Parse(`
+		{
+			optional(enumField: firstField)
+		}
+		`, nil)
+	if err != nil {
+		panic(err)
+	}
+	if err := graphql.ValidateQuery(context.Background(), builtSchema.Query, q.SelectionSet); err != nil {
+		t.Error(err)
+	}
+
+	val, err = e.Execute(context.Background(), builtSchema.Query, nil, q)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"optional": "firstField",
+	}, internal.AsJSON(val))
+
+	q, err = graphql.Parse(`
+		{
+			pointerret(enumField: firstField)
+		}
+		`, nil)
+	if err != nil {
+		panic(err)
+	}
+	if err := graphql.ValidateQuery(context.Background(), builtSchema.Query, q.SelectionSet); err != nil {
+		t.Error(err)
+	}
+
+	val, err = e.Execute(context.Background(), builtSchema.Query, nil, q)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"pointerret": float64(1),
+	}, internal.AsJSON(val))
 
 }

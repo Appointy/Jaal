@@ -112,7 +112,12 @@ func (sb *schemaBuilder) generateObjectParser(typ reflect.Type) (*argParser, gra
 // generateObjectParserInner generates the parser without having to worry about pointer.
 // It creates parser using the registered fields and maps the value from http request into them.
 func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser, graphql.Type, error) {
-	if isScalarType(typ){
+	if sb.enumMappings[typ] != nil {
+		parser, argType := sb.getEnumArgParser(typ)
+		return parser, argType, nil
+	}
+
+	if isScalarType(typ) {
 		return sb.getInputFieldParser(typ)
 	}
 
