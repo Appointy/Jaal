@@ -49,6 +49,16 @@ type EnumMapping struct {
 	ReverseMap map[interface{}]string
 }
 
+// InterfaceObj is a representation of graphql interface
+type InterfaceObj struct {
+	Struct reflect.Type
+	Type   interface{}
+}
+
+// Interface is a special marker struct that can be embedded into to denote that a type should be
+// treated as a interface type by the schemabuilder
+type Interface struct{}
+
 // Union is a special marker struct that can be embedded into to denote
 // that a type should be treated as a union type by the schemabuilder.
 //

@@ -49,6 +49,50 @@ func ValidateQuery(ctx context.Context, typ Type, selectionSet *SelectionSet) er
 			return fmt.Errorf(`unknown field "%s"`, selection.Name)
 		}
 		return nil
+
+	case *Interface:
+		if selectionSet == nil {
+			return fmt.Errorf("object field must have selections")
+		}
+		for _, fragment := range selectionSet.Fragments {
+			for typString, graphqlTyp := range typ.Types {
+				if fragment.On != typString {
+					continue
+				}
+				if err := ValidateQuery(ctx, graphqlTyp, fragment.SelectionSet); err != nil {
+					return err
+				}
+			}
+		}
+		for _, selection := range selectionSet.Selections {
+			if selection.Name == "__typename" {
+				if !isNilArgs(selection.Args) {
+					return fmt.Errorf(`error parsing args for "__typename": no args expected`)
+				}
+				if selection.SelectionSet != nil {
+					return fmt.Errorf(`scalar field "__typename" must have no selection`)
+				}
+				continue
+			}
+			field, ok := typ.Fields[selection.Name]
+			if !ok {
+				return fmt.Errorf(`unknown field "%s"`, selection.Name)
+			}
+
+			if !selection.parsed {
+				parsed, err := field.ParseArguments(selection.Args)
+				if err != nil {
+					return fmt.Errorf(`error parsing args for "%s": %s`, selection.Name, err)
+				}
+				selection.Args = parsed
+				selection.parsed = true
+			}
+			if err := ValidateQuery(ctx, field.Type, selection.SelectionSet); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	case *Object:
 		if selectionSet == nil {
 			return fmt.Errorf("object field must have selections")

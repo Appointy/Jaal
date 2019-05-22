@@ -45,6 +45,8 @@ func (e *Executor) execute(ctx context.Context, typ Type, source interface{}, se
 		return nil, errors.New("enum is not valid")
 	case *Union:
 		return e.executeUnion(ctx, typ, source, selectionSet)
+	case *Interface:
+		return e.executeInterface(ctx, typ, source, selectionSet)
 	case *Object:
 		return e.executeObject(ctx, typ, source, selectionSet)
 	case *List:
@@ -197,4 +199,48 @@ func (e *Executor) executeList(ctx context.Context, typ *List, source interface{
 	}
 
 	return items, nil
+}
+
+// executeInterface resolves an interface query
+func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source interface{}, selectionSet *SelectionSet) (interface{}, error) {
+	value := reflect.ValueOf(source)
+	if value.Kind() == reflect.Ptr && value.IsNil() {
+		return nil, nil
+	}
+	fields := make(map[string]interface{})
+	var possibleTypes []string
+	for typString, graphqlTyp := range typ.Types {
+		inner := reflect.ValueOf(source)
+		if inner.Kind() == reflect.Ptr && inner.Elem().Kind() == reflect.Struct {
+			inner = inner.Elem()
+		}
+		inner = inner.FieldByName(typString)
+		if inner.IsNil() {
+			continue
+		}
+		possibleTypes = append(possibleTypes, graphqlTyp.String())
+		selections := Flatten(selectionSet)
+		// for every selection, resolve the value and store it in the output object
+		for _, selection := range selections {
+			if selection.Name == "__typename" {
+				fields[selection.Alias] = graphqlTyp.Name
+				continue
+			}
+			field, ok := graphqlTyp.Fields[selection.Name]
+			if !ok {
+				continue
+			}
+			value := reflect.ValueOf(source).Elem()
+			value = value.FieldByName(typString)
+			resolved, err := e.resolveAndExecute(ctx, field, value.Interface(), selection)
+			if err != nil {
+				return nil, fmt.Errorf("%s - %s", selection.Alias, err)
+			}
+			fields[selection.Alias] = resolved
+		}
+	}
+	if len(possibleTypes) > 1 {
+		return nil, fmt.Errorf("interface type field should only return one value, but received: %s", strings.Join(possibleTypes, " "))
+	}
+	return fields, nil
 }
