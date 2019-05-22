@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"go.appointy.com/appointy/jaal/graphql"
-	"go.appointy.com/appointy/jaal/internal"
 )
 
 // schemaBuilder is a struct for holding all the graph information for types as
@@ -92,7 +91,7 @@ func (sb *schemaBuilder) getEnum(typ reflect.Type) (string, []string, bool) {
 // in variable reflect type.
 func getScalar(typ reflect.Type) (string, bool) {
 	for match, name := range scalars {
-		if internal.TypesIdenticalOrScalarAliases(match, typ) {
+		if typesIdenticalOrScalarAliases(match, typ) {
 			return name, true
 		}
 	}

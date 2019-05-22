@@ -201,3 +201,14 @@ type ID struct {
 func (id ID) MarshalJSON() ([]byte, error) {
 	return strconv.AppendQuote(nil, string(id.Value)), nil
 }
+
+// isScalarType checks whether a reflect.Type is scalar or not
+func isScalarType(t reflect.Type) bool {
+	_, ok := scalars[t]
+	return ok
+}
+
+// typesIdenticalOrScalarAliases checks whether a & b are same scalar
+func typesIdenticalOrScalarAliases(a, b reflect.Type) bool {
+	return a == b || (a.Kind() == b.Kind() && (a.Kind() != reflect.Struct) && (a.Kind() != reflect.Map) && isScalarType(a))
+}

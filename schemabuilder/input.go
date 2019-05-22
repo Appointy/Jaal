@@ -6,7 +6,6 @@ import (
 	"reflect"
 
 	"go.appointy.com/appointy/jaal/graphql"
-	"go.appointy.com/appointy/jaal/internal"
 )
 
 // argField is a representation of an input parameter field for a function.  It
@@ -276,7 +275,7 @@ func wrapWithZeroValue(inner *argParser, fieldArgTyp graphql.Type) (*argParser, 
 // getScalarArgParser creates an arg parser for a scalar type.
 func getScalarArgParser(typ reflect.Type) (*argParser, graphql.Type, bool) {
 	for match, argParser := range scalarArgParsers {
-		if internal.TypesIdenticalOrScalarAliases(match, typ) {
+		if typesIdenticalOrScalarAliases(match, typ) {
 			name, ok := getScalar(typ)
 			if !ok {
 				panic(typ)

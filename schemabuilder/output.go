@@ -117,7 +117,7 @@ func (sb *schemaBuilder) buildStruct(typ reflect.Type) error {
 			return fmt.Errorf("key field doesn't exist on object")
 		}
 
-		if !isScalarType(keyPtr.Type) {
+		if !isTypeScalar(keyPtr.Type) {
 			return fmt.Errorf("bad type %s: key type must be scalar, got %s", typ, keyPtr.Type.String())
 		}
 		object.KeyField = keyPtr
@@ -206,8 +206,8 @@ func (sb *schemaBuilder) buildField(field reflect.StructField) (*graphql.Field, 
 	}, nil
 }
 
-// isScalarType returns whether a graphql.Type is a scalar type (or a non-null wrapped scalar type).
-func isScalarType(typ graphql.Type) bool {
+// isTypeScalar returns whether a graphql.Type is a scalar type (or a non-null wrapped scalar type).
+func isTypeScalar(typ graphql.Type) bool {
 	if nonNull, ok := typ.(*graphql.NonNull); ok {
 		typ = nonNull.Type
 	}

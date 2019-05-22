@@ -3,7 +3,6 @@ package schemabuilder
 import (
 	"errors"
 	"fmt"
-	"go.appointy.com/appointy/jaal/internal"
 	"reflect"
 
 	"go.appointy.com/appointy/jaal/graphql"
@@ -113,7 +112,7 @@ func (sb *schemaBuilder) generateObjectParser(typ reflect.Type) (*argParser, gra
 // generateObjectParserInner generates the parser without having to worry about pointer.
 // It creates parser using the registered fields and maps the value from http request into them.
 func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser, graphql.Type, error) {
-	if internal.IsScalarType(typ){
+	if isScalarType(typ){
 		return sb.getInputFieldParser(typ)
 	}
 
