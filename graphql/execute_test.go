@@ -164,3 +164,58 @@ func TestBasic(t *testing.T) {
 		t.Error("bad value", spew.Sdump(internal.AsJSON(result)))
 	}
 }
+
+func TestRepeatedFragment(t *testing.T) {
+	ctr := 0
+	countArgParse := func() {
+		ctr++
+	}
+	query := makeQuery(&countArgParse)
+
+	q, err := graphql.Parse(`{
+		static
+		a { value nested { value ...frag } ...frag }
+		as { value }
+	}
+	fragment frag on A {
+		fieldWithArgs(arg1: 1)
+	}
+	`, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := graphql.ValidateQuery(context.Background(), query, q.SelectionSet); err != nil {
+		t.Error(err)
+	}
+	e := graphql.Executor{}
+	if _, err = e.Execute(context.Background(), query, nil, q); err != nil {
+		t.Error(err)
+	}
+
+	if ctr != 1 {
+		t.Errorf("Expected args for fragment to be parsed once, but they were parsed %d times.", ctr)
+	}
+}
+
+func TestError(t *testing.T) {
+	query := makeQuery(nil)
+
+	q, err := graphql.Parse(`
+		query foo {
+			error
+		}
+	`, map[string]interface{}{})
+	if err != nil {
+		panic(err)
+	}
+
+	if err := graphql.ValidateQuery(context.Background(), query, q.SelectionSet); err != nil {
+		t.Error(err)
+	}
+
+	e := graphql.Executor{}
+	if _, err := e.Execute(context.Background(), query, nil, q); err == nil || err.Error() != "error - test error" {
+		t.Error("expected test error")
+	}
+}
