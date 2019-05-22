@@ -159,6 +159,7 @@ func TestEnum(t *testing.T) {
 
 	builtSchema := schema.MustBuild()
 
+	// Enum value as input argument and selection in a query
 	q, err := graphql.Parse(`
 		{
 			inner(enumField: firstField)
@@ -178,6 +179,7 @@ func TestEnum(t *testing.T) {
 		"inner": "firstField",
 	}, internal.AsJSON(val))
 
+	// Same underlying type
 	q, err = graphql.Parse(`
 		{
 			inner2(enumField2: this)
@@ -196,6 +198,7 @@ func TestEnum(t *testing.T) {
 		"inner2": "this",
 	}, internal.AsJSON(val))
 
+	// Undefinded enum type
 	q, err = graphql.Parse(`
 		{
 			inner(enumField: wrongField)
@@ -205,9 +208,10 @@ func TestEnum(t *testing.T) {
 		panic(err)
 	}
 	if err := graphql.ValidateQuery(context.Background(), builtSchema.Query, q.SelectionSet); err == nil {
-		t.Error(err)
+		t.Error("Parsed undefined enum type", err)
 	}
 
+	// Input is pointer to enum
 	q, err = graphql.Parse(`
 		{
 			optional(enumField: firstField)
@@ -226,6 +230,7 @@ func TestEnum(t *testing.T) {
 		"optional": "firstField",
 	}, internal.AsJSON(val))
 
+	// Output is pointer to enum
 	q, err = graphql.Parse(`
 		{
 			pointerret(enumField: firstField)

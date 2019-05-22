@@ -2,6 +2,7 @@ module go.appointy.com/appointy/jaal
 
 require (
 	github.com/appointy/idgen v0.0.0-20190227121039-a884768ebb9d
+	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.3.1
 	github.com/graphql-go/graphql v0.7.8
 	github.com/srikrsna/sqlx v0.0.0-20180828084051-e347d2855cc9
