@@ -2,41 +2,46 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"strings"
 
+	"go.appointy.com/appointy/jaal"
+	"go.appointy.com/appointy/jaal/introspection"
 	"go.appointy.com/appointy/jaal/schemabuilder"
 )
 
 type node struct {
-	customers []A
-	providers []B
+	customers []Customer
+	providers []Provider
 }
 
-type A struct {
+type Customer struct {
 	Id   string
 	Name string
 }
 
-type B struct {
+type Provider struct {
 	Id    string
 	Email string
 }
 
 type NodeInterface struct {
 	schemabuilder.Interface
-	*A
-	*B
+	*Customer
+	*Provider
 }
 
 func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 	schema.Query().FieldFunc("node", func(ctx context.Context, args struct {
 		Id schemabuilder.ID
 	}) *NodeInterface {
+
 		if strings.Contains(args.Id.Value, "cus") {
 			for _, cus := range s.customers {
 				if cus.Id == args.Id.Value {
 					return &NodeInterface{
-						A: &cus,
+						Customer: &cus,
 					}
 				}
 			}
@@ -45,14 +50,14 @@ func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 		for _, pro := range s.providers {
 			if pro.Id == args.Id.Value {
 				return &NodeInterface{
-					B: &pro,
+					Provider: &pro,
 				}
 			}
 		}
 
 		return &NodeInterface{
-			A: &A{Id: args.Id.Value},
-			B: &B{Id: args.Id.Value},
+			Customer: &Customer{Id: args.Id.Value},
+			Provider: &Provider{Id: args.Id.Value},
 		}
 	})
 
@@ -61,53 +66,53 @@ func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 }
 
 func (s *node) registerA(schema *schemabuilder.Schema) {
-	obj := schema.Object("A", A{})
-	obj.FieldFunc("id", func(in *A) schemabuilder.ID {
+	obj := schema.Object("Customer", Customer{})
+	obj.FieldFunc("id", func(in *Customer) schemabuilder.ID {
 		return schemabuilder.ID{Value: in.Id}
 	})
-	obj.FieldFunc("name", func(in *A) string {
+	obj.FieldFunc("name", func(in *Customer) string {
 		return in.Name
 	})
 }
 
 func (s *node) registerB(schema *schemabuilder.Schema) {
-	obj := schema.Object("B", B{})
-	obj.FieldFunc("id", func(in *B) schemabuilder.ID {
+	obj := schema.Object("Provider", Provider{})
+	obj.FieldFunc("id", func(in *Provider) schemabuilder.ID {
 		return schemabuilder.ID{Value: in.Id}
 	})
-	obj.FieldFunc("email", func(in *B) string {
+	obj.FieldFunc("email", func(in *Provider) string {
 		return in.Email
 	})
 }
 
-// func main() {
-// 	s := node{
-// 		customers: []A{
-// 			{
-// 				Id:   idgen.New("cus"),
-// 				Name: "Anuj",
-// 			},
-// 		},
-// 		providers: []B{
-// 			{
-// 				Id:    idgen.New("pro"),
-// 				Email: "anuj.g@appointy.com",
-// 			},
-// 		},
-// 	}
+func main() {
+	s := node{
+		customers: []Customer{
+			{
+				Id:   "cus_01DBF6E5CE9JY03HP3XGAVRAAC",
+				Name: "Anuj",
+			},
+		},
+		providers: []Provider{
+			{
+				Id:    "pro_01DBF6E5CE9JY03HP3XGMTCFR7",
+				Email: "anuj.g@appointy.com",
+			},
+		},
+	}
 
-// 	fmt.Println(s.customers[0], s.providers[0])
+	fmt.Println(s.customers[0], s.providers[0])
 
-// 	builder := schemabuilder.NewSchema()
-// 	s.registerNodeInterface(builder)
+	builder := schemabuilder.NewSchema()
+	s.registerNodeInterface(builder)
 
-// 	schema := builder.MustBuild()
+	schema := builder.MustBuild()
 
-// 	introspection.AddIntrospectionToSchema(schema)
+	introspection.AddIntrospectionToSchema(schema)
 
-// 	http.Handle("/graphql", jaal.HTTPHandler(schema))
-// 	fmt.Println("Running")
-// 	if err := http.ListenAndServe(":3000", nil); err != nil {
-// 		panic(err)
-// 	}
-// }
+	http.Handle("/graphql", jaal.HTTPHandler(schema))
+	fmt.Println("Running")
+	if err := http.ListenAndServe(":3000", nil); err != nil {
+		panic(err)
+	}
+}
