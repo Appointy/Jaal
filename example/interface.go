@@ -2,13 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"strings"
 
-	"github.com/appointy/idgen"
-	"go.appointy.com/appointy/jaal"
-	"go.appointy.com/appointy/jaal/introspection"
 	"go.appointy.com/appointy/jaal/schemabuilder"
 )
 
@@ -85,34 +80,34 @@ func (s *node) registerB(schema *schemabuilder.Schema) {
 	})
 }
 
-func main() {
-	s := node{
-		customers: []A{
-			{
-				Id:   idgen.New("cus"),
-				Name: "Anuj",
-			},
-		},
-		providers: []B{
-			{
-				Id:    idgen.New("pro"),
-				Email: "anuj.g@appointy.com",
-			},
-		},
-	}
+// func main() {
+// 	s := node{
+// 		customers: []A{
+// 			{
+// 				Id:   idgen.New("cus"),
+// 				Name: "Anuj",
+// 			},
+// 		},
+// 		providers: []B{
+// 			{
+// 				Id:    idgen.New("pro"),
+// 				Email: "anuj.g@appointy.com",
+// 			},
+// 		},
+// 	}
 
-	fmt.Println(s.customers[0], s.providers[0])
+// 	fmt.Println(s.customers[0], s.providers[0])
 
-	builder := schemabuilder.NewSchema()
-	s.registerNodeInterface(builder)
+// 	builder := schemabuilder.NewSchema()
+// 	s.registerNodeInterface(builder)
 
-	schema := builder.MustBuild()
+// 	schema := builder.MustBuild()
 
-	introspection.AddIntrospectionToSchema(schema)
+// 	introspection.AddIntrospectionToSchema(schema)
 
-	http.Handle("/graphql", jaal.HTTPHandler(schema))
-	fmt.Println("Running")
-	if err := http.ListenAndServe(":3000", nil); err != nil {
-		panic(err)
-	}
-}
+// 	http.Handle("/graphql", jaal.HTTPHandler(schema))
+// 	fmt.Println("Running")
+// 	if err := http.ListenAndServe(":3000", nil); err != nil {
+// 		panic(err)
+// 	}
+// }

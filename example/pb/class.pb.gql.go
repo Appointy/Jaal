@@ -22,7 +22,7 @@ func registerClassType(schema *schemabuilder.Schema) {
 }
 
 func registerClass(schema *schemabuilder.Schema) {
-	obj := schema.Object("class", Class{})
+	obj := schema.Object("Class", Class{})
 	obj.FieldFunc("id", func(ctx context.Context, in *Class) schemabuilder.ID {
 		return schemabuilder.ID{Value: in.Id}
 	})
@@ -64,7 +64,7 @@ func registerClass(schema *schemabuilder.Schema) {
 		//Using fragments
 	})
 
-	obj = schema.Object("serviceProvider", ServiceProvider{})
+	obj = schema.Object("ServiceProvider", ServiceProvider{})
 	obj.FieldFunc("id", func(ctx context.Context, in *ServiceProvider) schemabuilder.ID {
 		return schemabuilder.ID{Value: in.Id}
 	})
