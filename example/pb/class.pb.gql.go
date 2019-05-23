@@ -3,6 +3,9 @@ package pb
 import (
 	"context"
 
+	duration "github.com/golang/protobuf/ptypes/duration"
+	empty "github.com/golang/protobuf/ptypes/empty"
+	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/appointy/jaal/schemabuilder"
 )
 
@@ -63,6 +66,15 @@ func registerClass(schema *schemabuilder.Schema) {
 
 		//Using fragments
 	})
+	obj.FieldFunc("startDate", func(ctx context.Context, in *Class) *timestamp.Timestamp {
+		return in.StartDate
+	})
+	obj.FieldFunc("duration", func(ctx context.Context, in *Class) *duration.Duration {
+		return in.Duration
+	})
+	obj.FieldFunc("empty", func(ctx context.Context, in *Class) *empty.Empty {
+		return in.Empty
+	})
 
 	obj = schema.Object("ServiceProvider", ServiceProvider{})
 	obj.FieldFunc("id", func(ctx context.Context, in *ServiceProvider) schemabuilder.ID {
@@ -122,6 +134,12 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 	})
 	inputObj.FieldFunc("classPerInstance", func(target *Class, source *Class_PerInstance) {
 		target.Charge = source
+	})
+	inputObj.FieldFunc("duration", func(target *Class, source *duration.Duration) {
+		target.Duration = source
+	})
+	inputObj.FieldFunc("startDate", func(target *Class, source *timestamp.Timestamp) {
+		target.StartDate = source
 	})
 
 	inputObj = schema.InputObject("serviceProvider", ServiceProvider{})

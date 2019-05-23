@@ -55,7 +55,7 @@ func RegisterStringStringMap() {
 
 // RegisterEmpty registers empty as an scalar type
 func RegisterEmpty() {
-	typ := reflect.TypeOf((*empty.Empty)(nil)).Elem()
+	typ := reflect.TypeOf(empty.Empty{})
 	schemabuilder.RegisterScalar(typ, "Empty", func(value interface{}, target reflect.Value) error {
 		return nil
 	})
@@ -63,19 +63,14 @@ func RegisterEmpty() {
 
 // RegisterDuration registers duration as an scalar type
 func RegisterDuration() {
-	typ := reflect.TypeOf((*duration.Duration)(nil)).Elem()
+	typ := reflect.TypeOf(duration.Duration{})
 	schemabuilder.RegisterScalar(typ, "Duration", func(value interface{}, target reflect.Value) error {
 		v, ok := value.(string)
 		if !ok {
 			return errors.New("invalid type expected a string")
 		}
 
-		unq, err := unquote(v)
-		if err != nil {
-			return err
-		}
-
-		d, err := time.ParseDuration(unq)
+		d, err := time.ParseDuration(v)
 		if err != nil {
 			return fmt.Errorf("bad Duration: %v", err)
 		}
@@ -90,33 +85,22 @@ func RegisterDuration() {
 	})
 }
 
-// RegisterTimestamp registers timestamp as an scalar type
+// RegisterTimestamp registers timestamp as a scalar type
 func RegisterTimestamp() {
-	typ := reflect.TypeOf((*timestamp.Timestamp)(nil)).Elem()
+	typ := reflect.TypeOf(timestamp.Timestamp{})
 	schemabuilder.RegisterScalar(typ, "Timestamp", func(value interface{}, target reflect.Value) error {
 		v, ok := value.(string)
 		if !ok {
 			return errors.New("invalid type expected a string")
 		}
 
-		unq, err := unquote(v)
+		t, err := time.Parse(time.RFC3339, v)
 		if err != nil {
 			return err
 		}
 
-		t, err := time.Parse(time.RFC3339Nano, unq)
-		if err != nil {
-			return fmt.Errorf("bad Timestamp: %v", err)
-		}
-
-		target.Field(0).SetInt(t.Unix())
+		target.Field(0).SetInt(int64(t.Second()))
 		target.Field(1).SetInt(int64(t.Nanosecond()))
 		return nil
 	})
-}
-
-func unquote(s string) (string, error) {
-	var ret string
-	err := json.Unmarshal([]byte(s), &ret)
-	return ret, err
 }
