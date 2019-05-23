@@ -85,70 +85,68 @@ func registerClass(schema *schemabuilder.Schema) {
 
 func registerCreateClassReq(schema *schemabuilder.Schema) {
 	inputObj := schema.InputObject("createClassReq", CreateClassReq{})
-	inputObj.FieldFunc("parent", func(target *CreateClassReq, source string) {
-		target.Parent = source
+	inputObj.FieldFunc("parent", func(target *CreateClassReq, source *string) {
+		target.Parent = *source
 	})
-	inputObj.FieldFunc("class", func(target *CreateClassReq, source Class) {
-		target.Class = &source
+	inputObj.FieldFunc("class", func(target *CreateClassReq, source *Class) {
+		target.Class = source
 	})
 
 	inputObj = schema.InputObject("class", Class{})
-	inputObj.FieldFunc("id", func(target *Class, source schemabuilder.ID) {
+	inputObj.FieldFunc("id", func(target *Class, source *schemabuilder.ID) {
 		target.Id = source.Value
 	})
-	inputObj.FieldFunc("area", func(target *Class, source float32) {
-		target.Area = source
+	inputObj.FieldFunc("area", func(target *Class, source *float32) {
+		target.Area = *source
 	})
-	inputObj.FieldFunc("area", func(target *Class, source float32) {
-		target.Area = source
+	inputObj.FieldFunc("area", func(target *Class, source *float32) {
+		target.Area = *source
 	})
-	inputObj.FieldFunc("strength", func(target *Class, source int32) {
-		target.Strength = source
+	inputObj.FieldFunc("strength", func(target *Class, source *int32) {
+		target.Strength = *source
 	})
-	inputObj.FieldFunc("type", func(target *Class, source ClassType) {
-		target.Type = source
+	inputObj.FieldFunc("type", func(target *Class, source *ClassType) {
+		target.Type = *source
 	})
-	inputObj.FieldFunc("instructors", func(target *Class, source []ServiceProvider) {
-		for _, value := range source {
-			target.Instructors = append(target.Instructors, &value)
-		}
+	inputObj.FieldFunc("instructors", func(target *Class, source []*ServiceProvider) {
+		target.Instructors = source
 	})
-	inputObj.FieldFunc("metadata", func(target *Class, source map[string]string) {
-		target.Metadata = source
+	inputObj.FieldFunc("metadata", func(target *Class, source *map[string]string) {
+		target.Metadata = *source
 	})
-	inputObj.FieldFunc("parent", func(target *Class, source string) {
-		target.Parent = source
+	inputObj.FieldFunc("parent", func(target *Class, source *string) {
+		target.Parent = *source
 	})
-	inputObj.FieldFunc("classLumpsum", func(target *Class, source Class_Lumpsum) {
-		target.Charge = &source
+	inputObj.FieldFunc("classLumpsum", func(target *Class, source *Class_Lumpsum) {
+		target.Charge = source
 	})
-	inputObj.FieldFunc("classPerInstance", func(target *Class, source Class_PerInstance) {
-		target.Charge = &source
+	inputObj.FieldFunc("classPerInstance", func(target *Class, source *Class_PerInstance) {
+		target.Charge = source
 	})
 
 	inputObj = schema.InputObject("serviceProvider", ServiceProvider{})
-	inputObj.FieldFunc("id", func(target *ServiceProvider, source schemabuilder.ID) {
+	inputObj.FieldFunc("id", func(target *ServiceProvider, source *schemabuilder.ID) {
 		target.Id = source.Value
 	})
-	inputObj.FieldFunc("firstName", func(target *ServiceProvider, source string) {
-		target.FirstName = source
+	inputObj.FieldFunc("firstName", func(target *ServiceProvider, source *string) {
+		target.FirstName = *source
 	})
 
 	inputObj = schema.InputObject("classLumpsum", Class_Lumpsum{})
-	inputObj.FieldFunc("lumpsum", func(target *Class_Lumpsum, source int32) {
-		target.Lumpsum = source
+	inputObj.FieldFunc("lumpsum", func(target *Class_Lumpsum, source *int32) {
+		target.Lumpsum = *source
 	})
 
 	inputObj = schema.InputObject("classPerInstance", Class_PerInstance{})
-	inputObj.FieldFunc("perInstance", func(target *Class_PerInstance, source string) {
-		target.PerInstance = source
+	inputObj.FieldFunc("perInstance", func(target *Class_PerInstance, source *string) {
+		target.PerInstance = *source
 	})
 
 }
 
 func registerGetClassReq(schema *schemabuilder.Schema) {
 	inputObj := schema.InputObject("getClassReq", GetClassReq{})
-	inputObj.FieldFunc("id", func(target *GetClassReq, source schemabuilder.ID) {
+	inputObj.FieldFunc("id", func(target *GetClassReq, source *schemabuilder.ID) {
 		target.Id = source.Value
 	})
 }

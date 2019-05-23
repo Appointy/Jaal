@@ -2,12 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"strings"
 
-	"go.appointy.com/appointy/jaal"
-	"go.appointy.com/appointy/jaal/introspection"
 	"go.appointy.com/appointy/jaal/schemabuilder"
 )
 
@@ -85,34 +81,34 @@ func (s *node) registerB(schema *schemabuilder.Schema) {
 	})
 }
 
-func main() {
-	s := node{
-		customers: []Customer{
-			{
-				Id:   "cus_01DBF6E5CE9JY03HP3XGAVRAAC",
-				Name: "Anuj",
-			},
-		},
-		providers: []Provider{
-			{
-				Id:    "pro_01DBF6E5CE9JY03HP3XGMTCFR7",
-				Email: "anuj.g@appointy.com",
-			},
-		},
-	}
-
-	fmt.Println(s.customers[0], s.providers[0])
-
-	builder := schemabuilder.NewSchema()
-	s.registerNodeInterface(builder)
-
-	schema := builder.MustBuild()
-
-	introspection.AddIntrospectionToSchema(schema)
-
-	http.Handle("/graphql", jaal.HTTPHandler(schema))
-	fmt.Println("Running")
-	if err := http.ListenAndServe(":3000", nil); err != nil {
-		panic(err)
-	}
-}
+//func main() {
+//	s := node{
+//		customers: []Customer{
+//			{
+//				Id:   "cus_01DBF6E5CE9JY03HP3XGAVRAAC",
+//				Name: "Anuj",
+//			},
+//		},
+//		providers: []Provider{
+//			{
+//				Id:    "pro_01DBF6E5CE9JY03HP3XGMTCFR7",
+//				Email: "anuj.g@appointy.com",
+//			},
+//		},
+//	}
+//
+//	fmt.Println(s.customers[0], s.providers[0])
+//
+//	builder := schemabuilder.NewSchema()
+//	s.registerNodeInterface(builder)
+//
+//	schema := builder.MustBuild()
+//
+//	introspection.AddIntrospectionToSchema(schema)
+//
+//	http.Handle("/graphql", jaal.HTTPHandler(schema))
+//	fmt.Println("Running")
+//	if err := http.ListenAndServe(":3000", nil); err != nil {
+//		panic(err)
+//	}
+//}

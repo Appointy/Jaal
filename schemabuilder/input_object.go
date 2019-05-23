@@ -159,7 +159,10 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 
 			target := reflect.New(typ)
 			for name, field := range fields {
-				value := asMap[name]
+				value, exists := asMap[name]
+				if !exists{
+					continue
+				}
 				function := obj.Fields[name]
 				funcTyp := reflect.TypeOf(function)
 				sourceTyp := funcTyp.In(1)
@@ -202,6 +205,12 @@ func (sb *schemaBuilder) getInputFieldParser(typ reflect.Type) (*argParser, grap
 		return parser, argType, nil
 	case reflect.Slice:
 		return sb.generateSliceParser(typ)
+	case reflect.Ptr:
+		parser, argType, err := sb.getInputFieldParser(typ.Elem())
+		if err != nil {
+			return nil, nil, err
+		}
+		return wrapPtrParser(parser), argType, nil
 	default:
 		return nil, nil, fmt.Errorf("bad arg type %s: should be struct, scalar, pointer, or a slice", typ)
 	}
