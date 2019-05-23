@@ -52,6 +52,7 @@ func (sb *schemaBuilder) buildStruct(typ reflect.Type) error {
 		Name:        name,
 		Description: description,
 		Fields:      make(map[string]*graphql.Field),
+		Interfaces:  make(map[string]*graphql.Interface),
 	}
 	sb.types[typ] = object
 
@@ -289,5 +290,10 @@ func (sb *schemaBuilder) buildInterfaceStruct(typ reflect.Type) error {
 
 	}
 	interfaceType.Fields = fieldMap
+
+	for _, typ := range interfaceType.Types {
+		typ.Interfaces[interfaceType.Name] = interfaceType
+	}
+
 	return nil
 }

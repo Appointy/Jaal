@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"strings"
 
+	"go.appointy.com/appointy/jaal"
+	"go.appointy.com/appointy/jaal/introspection"
 	"go.appointy.com/appointy/jaal/schemabuilder"
 )
 
@@ -28,14 +32,18 @@ type NodeInterface struct {
 	*Provider
 }
 
+type NodeInput struct {
+	Id string
+}
+
 func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 	schema.Query().FieldFunc("node", func(ctx context.Context, args struct {
-		Id schemabuilder.ID
+		In NodeInput
 	}) *NodeInterface {
 
-		if strings.Contains(args.Id.Value, "cus") {
+		if strings.Contains(args.In.Id, "cus") {
 			for _, cus := range s.customers {
-				if cus.Id == args.Id.Value {
+				if cus.Id == args.In.Id {
 					return &NodeInterface{
 						Customer: &cus,
 					}
@@ -44,7 +52,7 @@ func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 		}
 
 		for _, pro := range s.providers {
-			if pro.Id == args.Id.Value {
+			if pro.Id == args.In.Id {
 				return &NodeInterface{
 					Provider: &pro,
 				}
@@ -52,13 +60,22 @@ func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 		}
 
 		return &NodeInterface{
-			Customer: &Customer{Id: args.Id.Value},
-			Provider: &Provider{Id: args.Id.Value},
+			Customer: &Customer{Id: args.In.Id},
+			Provider: &Provider{Id: args.In.Id},
 		}
 	})
 
 	s.registerA(schema)
 	s.registerB(schema)
+	s.registerNodeInput(schema)
+	schema.Mutation()
+}
+
+func (s *node) registerNodeInput(schema *schemabuilder.Schema){
+	input := schema.InputObject("NodeInput", NodeInput{})
+	input.FieldFunc("id", func(target *NodeInput, source *schemabuilder.ID) {
+		target.Id = source.Value
+	})
 }
 
 func (s *node) registerA(schema *schemabuilder.Schema) {
@@ -81,34 +98,34 @@ func (s *node) registerB(schema *schemabuilder.Schema) {
 	})
 }
 
-//func main() {
-//	s := node{
-//		customers: []Customer{
-//			{
-//				Id:   "cus_01DBF6E5CE9JY03HP3XGAVRAAC",
-//				Name: "Anuj",
-//			},
-//		},
-//		providers: []Provider{
-//			{
-//				Id:    "pro_01DBF6E5CE9JY03HP3XGMTCFR7",
-//				Email: "anuj.g@appointy.com",
-//			},
-//		},
-//	}
-//
-//	fmt.Println(s.customers[0], s.providers[0])
-//
-//	builder := schemabuilder.NewSchema()
-//	s.registerNodeInterface(builder)
-//
-//	schema := builder.MustBuild()
-//
-//	introspection.AddIntrospectionToSchema(schema)
-//
-//	http.Handle("/graphql", jaal.HTTPHandler(schema))
-//	fmt.Println("Running")
-//	if err := http.ListenAndServe(":3000", nil); err != nil {
-//		panic(err)
-//	}
-//}
+func main() {
+	s := node{
+		customers: []Customer{
+			{
+				Id:   "cus_01DBF6E5CE9JY03HP3XGAVRAAC",
+				Name: "Anuj",
+			},
+		},
+		providers: []Provider{
+			{
+				Id:    "pro_01DBF6E5CE9JY03HP3XGMTCFR7",
+				Email: "anuj.g@appointy.com",
+			},
+		},
+	}
+
+	fmt.Println(s.customers[0], s.providers[0])
+
+	builder := schemabuilder.NewSchema()
+	s.registerNodeInterface(builder)
+
+	schema := builder.MustBuild()
+
+	introspection.AddIntrospectionToSchema(schema)
+
+	http.Handle("/graphql", jaal.HTTPHandler(schema))
+	fmt.Println("Running")
+	if err := http.ListenAndServe(":3000", nil); err != nil {
+		panic(err)
+	}
+}

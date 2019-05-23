@@ -162,6 +162,8 @@ func (s *introspection) registerType(schema *schemabuilder.Schema) {
 			return OBJECT
 		case *graphql.Union:
 			return UNION
+		case *graphql.Interface:
+			return INTERFACE
 		case *graphql.Scalar:
 			return SCALAR
 		case *graphql.Enum:
@@ -183,6 +185,8 @@ func (s *introspection) registerType(schema *schemabuilder.Schema) {
 			return t.Name
 		case *graphql.Union:
 			return t.Name
+		case *graphql.Interface:
+			return t.Name
 		case *graphql.Scalar:
 			return t.Type
 		case *graphql.Enum:
@@ -200,15 +204,38 @@ func (s *introspection) registerType(schema *schemabuilder.Schema) {
 			return t.Description
 		case *graphql.Union:
 			return t.Description
+		case *graphql.Interface:
+			return t.Description
 		default:
 			return ""
 		}
 	})
 
-	object.FieldFunc("interfaces", func() []Type { return nil })
+	object.FieldFunc("interfaces", func(t Type) []Type {
+		switch t := t.Inner.(type) {
+		case *graphql.Object:
+			types := make([]Type, 0, len(t.Interfaces))
+			for _, typ := range t.Interfaces {
+				types = append(types, Type{Inner: typ})
+			}
+
+			sort.Slice(types, func(i, j int) bool { return types[i].Inner.String() < types[j].Inner.String() })
+			return types
+		default:
+			return nil
+		}
+	})
 	object.FieldFunc("possibleTypes", func(t Type) []Type {
 		switch t := t.Inner.(type) {
 		case *graphql.Union:
+			types := make([]Type, 0, len(t.Types))
+			for _, typ := range t.Types {
+				types = append(types, Type{Inner: typ})
+			}
+
+			sort.Slice(types, func(i, j int) bool { return types[i].Inner.String() < types[j].Inner.String() })
+			return types
+		case *graphql.Interface:
 			types := make([]Type, 0, len(t.Types))
 			for _, typ := range t.Types {
 				types = append(types, Type{Inner: typ})
@@ -245,6 +272,23 @@ func (s *introspection) registerType(schema *schemabuilder.Schema) {
 
 		switch t := t.Inner.(type) {
 		case *graphql.Object:
+			for name, f := range t.Fields {
+				var args []InputValue
+				for name, a := range f.Args {
+					args = append(args, InputValue{
+						Name: name,
+						Type: Type{Inner: a},
+					})
+				}
+				sort.Slice(args, func(i, j int) bool { return args[i].Name < args[j].Name })
+
+				fields = append(fields, field{
+					Name: name,
+					Type: Type{Inner: f.Type},
+					Args: args,
+				})
+			}
+		case *graphql.Interface:
 			for name, f := range t.Fields {
 				var args []InputValue
 				for name, a := range f.Args {
@@ -351,6 +395,23 @@ func collectTypes(typ graphql.Type, types map[string]graphql.Type) {
 		types[typ.Name] = typ
 		for _, graphqlTyp := range typ.Types {
 			collectTypes(graphqlTyp, types)
+		}
+
+	case *graphql.Interface:
+		if _, ok := types[typ.Name]; ok {
+			return
+		}
+		types[typ.Name] = typ
+
+		for _, field := range typ.Fields {
+			collectTypes(field.Type, types)
+
+			for _, arg := range field.Args {
+				collectTypes(arg, types)
+			}
+		}
+		for _, object := range typ.Types {
+			collectTypes(object, types)
 		}
 
 	case *graphql.List:

@@ -1,8 +1,13 @@
 package introspection_test
 
 import (
+	"context"
 	"encoding/json"
+	"reflect"
+	"strings"
 	"testing"
+
+	"go.appointy.com/appointy/jaal/graphql"
 
 	"github.com/stretchr/testify/require"
 	"go.appointy.com/appointy/jaal/introspection"
@@ -132,4 +137,403 @@ func TestComputeSchemaJSON(t *testing.T) {
 
 	var actual map[string]interface{}
 	json.Unmarshal(actualBytes, &actual)
+}
+
+func TestIntrospectionForInterface(t *testing.T) {
+	s := node{
+		customers: []Customer{
+			{
+				Id:   "cus_01DBF6E5CE9JY03HP3XGAVRAAC",
+				Name: "Anuj",
+			},
+		},
+		providers: []Provider{
+			{
+				Id:    "pro_01DBF6E5CE9JY03HP3XGMTCFR7",
+				Email: "anuj.g@appointy.com",
+			},
+		},
+	}
+	builder := schemabuilder.NewSchema()
+	s.registerNodeInterface(builder)
+	schema := builder.MustBuild()
+	introspection.AddIntrospectionToSchema(schema)
+	e := graphql.Executor{}
+
+	tests := []struct {
+		name           string
+		query          string
+		expectedResult interface{}
+	}{
+		{
+			name: "Test __Schema",
+			query: `
+				{
+					__schema{
+						types{
+							name
+							kind
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__schema": map[string]interface{}{
+					"types": []interface{}{
+						map[string]interface{}{
+							"name": "Customer",
+							"kind": "OBJECT",
+						},
+						map[string]interface{}{
+							"name": "ID",
+							"kind": "SCALAR",
+						},
+						map[string]interface{}{
+							"kind": "OBJECT",
+							"name": "Mutation",
+						},
+						map[string]interface{}{
+							"name": "Node",
+							"kind": "INTERFACE",
+						},
+						map[string]interface{}{
+							"name": "NodeInput",
+							"kind": "INPUT_OBJECT",
+						},
+						map[string]interface{}{
+							"name": "Provider",
+							"kind": "OBJECT",
+						},
+						map[string]interface{}{
+							"name": "Query",
+							"kind": "OBJECT",
+						},
+						map[string]interface{}{
+							"name": "String",
+							"kind": "SCALAR",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Test Query __Type",
+			query: `
+				{
+					__schema{
+						queryType{
+							fields{
+								name
+								args{
+									name
+									type{
+										name
+										kind
+									}
+								}
+								type{
+									name
+									kind
+								}
+							}
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__schema": map[string]interface{}{
+					"queryType": map[string]interface{}{
+						"fields": []interface{}{
+							map[string]interface{}{
+								"args": []interface{}{
+									map[string]interface{}{
+										"name": "in",
+										"type": map[string]interface{}{
+											"kind": "INPUT_OBJECT",
+											"name": "NodeInput",
+										},
+									},
+								},
+								"name": "node",
+								"type": map[string]interface{}{
+									"kind": "INTERFACE",
+									"name": "Node",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Test Interface __Type",
+			query: `
+				{
+					__type(name:"Node"){
+						name
+						kind
+						fields{
+							name
+							args{
+								name
+							}
+							type{
+								kind
+								ofType{
+									name
+									kind
+								}
+							}
+						}
+						possibleTypes{
+							name
+							kind
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__type": map[string]interface{}{
+					"fields": []interface{}{
+						map[string]interface{}{
+							"args": []interface{}{},
+							"name": "id",
+							"type": map[string]interface{}{
+								"kind": "NON_NULL",
+								"ofType": map[string]interface{}{
+									"kind": "SCALAR",
+									"name": "ID",
+								},
+							},
+						},
+					},
+					"kind": "INTERFACE",
+					"name": "Node",
+					"possibleTypes": []interface{}{
+						map[string]interface{}{
+							"kind": "OBJECT",
+							"name": "Customer",
+						},
+						map[string]interface{}{
+							"kind": "OBJECT",
+							"name": "Provider",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Test Object __Type",
+			query: `
+				{
+					__type(name:"Customer"){
+						name
+						kind
+						fields{
+							name
+							args{
+								name
+							}
+							type{
+								kind
+								ofType{
+									name
+									kind
+								}
+							}
+						}
+						interfaces{
+							name
+							kind
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__type": map[string]interface{}{
+					"fields": []interface{}{
+						map[string]interface{}{
+							"args": []interface{}{},
+							"name": "firstName",
+							"type": map[string]interface{}{
+								"kind": "NON_NULL",
+								"ofType": map[string]interface{}{
+									"kind": "SCALAR",
+									"name": "String",
+								},
+							},
+						},
+						map[string]interface{}{
+							"args": []interface{}{},
+							"name": "id",
+							"type": map[string]interface{}{
+								"kind": "NON_NULL",
+								"ofType": map[string]interface{}{
+									"kind": "SCALAR",
+									"name": "ID",
+								},
+							},
+						},
+					},
+					"interfaces": []interface{}{
+						map[string]interface{}{
+							"kind": "INTERFACE",
+							"name": "Node",
+						},
+					},
+					"kind": "OBJECT",
+					"name": "Customer",
+				},
+			},
+		},
+		{
+			name: "Test InputObject __Type",
+			query: `
+				{
+					__type(name:"NodeInput"){
+						name
+						kind
+						inputFields{
+							name
+							type{
+								kind
+								ofType{
+									name
+									kind
+								}
+							}
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__type": map[string]interface{}{
+					"inputFields": []interface{}{
+						map[string]interface{}{
+							"name": "id",
+							"type": map[string]interface{}{
+								"kind":   "SCALAR",
+								"ofType": nil,
+							},
+						},
+					},
+					"kind": "INPUT_OBJECT",
+					"name": "NodeInput",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			query, err := graphql.Parse(tt.query, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if err := graphql.ValidateQuery(context.Background(), schema.Query, query.SelectionSet); err != nil {
+				t.Fatal(err)
+			}
+
+			result, err := e.Execute(context.Background(), schema.Query, nil, query)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			a, _ := json.Marshal(result)
+			b, _ := json.Marshal(tt.expectedResult)
+
+			if !reflect.DeepEqual(a, b) {
+				t.Fatalf("got : \n%v\n\n\nactual : \n%v", string(a), string(b))
+			}
+
+		})
+	}
+}
+
+type Customer struct {
+	Id   string
+	Name string
+}
+
+type Provider struct {
+	Id    string
+	Email string
+}
+
+type NodeInput struct {
+	Id string
+}
+
+type Node struct {
+	schemabuilder.Interface
+	*Customer
+	*Provider
+}
+
+type node struct {
+	customers []Customer
+	providers []Provider
+}
+
+func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
+	schema.Query().FieldFunc("node", func(ctx context.Context, args struct {
+		In NodeInput
+	}) *Node {
+
+		if strings.Contains(args.In.Id, "cus") {
+			for _, cus := range s.customers {
+				if cus.Id == args.In.Id {
+					return &Node{
+						Customer: &cus,
+					}
+				}
+			}
+		}
+
+		for _, pro := range s.providers {
+			if pro.Id == args.In.Id {
+				return &Node{
+					Provider: &pro,
+				}
+			}
+		}
+
+		return &Node{
+			Customer: &Customer{Id: args.In.Id},
+			Provider: &Provider{Id: args.In.Id},
+		}
+	})
+
+	s.registerCustomer(schema)
+	s.registerProvider(schema)
+	s.registerNodeInput(schema)
+	schema.Mutation()
+}
+
+func (s *node) registerNodeInput(schema *schemabuilder.Schema) {
+	input := schema.InputObject("NodeInput", NodeInput{})
+	input.FieldFunc("id", func(target *NodeInput, source *schemabuilder.ID) {
+		target.Id = source.Value
+	})
+}
+
+func (s *node) registerCustomer(schema *schemabuilder.Schema) {
+	obj := schema.Object("Customer", Customer{})
+	obj.FieldFunc("id", func(in *Customer) schemabuilder.ID {
+		return schemabuilder.ID{Value: in.Id}
+	})
+	obj.FieldFunc("firstName", func(in *Customer) string {
+		return in.Name
+	})
+}
+
+func (s *node) registerProvider(schema *schemabuilder.Schema) {
+	obj := schema.Object("Provider", Provider{})
+	obj.FieldFunc("id", func(in *Provider) schemabuilder.ID {
+		return schemabuilder.ID{Value: in.Id}
+	})
+	obj.FieldFunc("email", func(in *Provider) string {
+		return in.Email
+	})
 }
