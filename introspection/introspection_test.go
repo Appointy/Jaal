@@ -174,6 +174,20 @@ func TestIntrospectionForInterface(t *testing.T) {
 							name
 							kind
 						}
+						mutationType{
+							name
+							kind
+							fields{
+								name
+							}
+						}
+						subscriptionType{
+							name
+							kind
+						}
+						directives{
+							name
+						}
 					}
 				}
 			`,
@@ -205,6 +219,10 @@ func TestIntrospectionForInterface(t *testing.T) {
 							"kind": "OBJECT",
 						},
 						map[string]interface{}{
+							"name": "ProviderType",
+							"kind": "ENUM",
+						},
+						map[string]interface{}{
 							"name": "Query",
 							"kind": "OBJECT",
 						},
@@ -213,6 +231,13 @@ func TestIntrospectionForInterface(t *testing.T) {
 							"kind": "SCALAR",
 						},
 					},
+					"mutationType": map[string]interface{}{
+						"name":   "Mutation",
+						"kind":   "OBJECT",
+						"fields": []interface{}{},
+					},
+					"subscriptionType": nil,
+					"directives":       []interface{}{},
 				},
 			},
 		},
@@ -222,6 +247,24 @@ func TestIntrospectionForInterface(t *testing.T) {
 				{
 					__schema{
 						queryType{
+							name
+							kind
+							interfaces{
+								name
+							}
+							possibleTypes{
+								name
+							}
+							enumValues{
+								name
+							}
+							inputFields{
+								name
+							}
+							ofType{
+								name
+								kind
+							}
 							fields{
 								name
 								args{
@@ -243,6 +286,13 @@ func TestIntrospectionForInterface(t *testing.T) {
 			expectedResult: map[string]interface{}{
 				"__schema": map[string]interface{}{
 					"queryType": map[string]interface{}{
+						"name":          "Query",
+						"kind":          "OBJECT",
+						"interfaces":    []interface{}{},
+						"possibleTypes": []interface{}{},
+						"enumValues":    []interface{}{},
+						"inputFields":   []interface{}{},
+						"ofType":        nil,
 						"fields": []interface{}{
 							map[string]interface{}{
 								"args": []interface{}{
@@ -289,6 +339,19 @@ func TestIntrospectionForInterface(t *testing.T) {
 							name
 							kind
 						}
+						interfaces{
+							name
+						}
+						enumValues{
+							name
+						}
+						inputFields{
+							name
+						}
+						ofType{
+							name
+							kind
+						}
 					}
 				}
 			`,
@@ -319,6 +382,10 @@ func TestIntrospectionForInterface(t *testing.T) {
 							"name": "Provider",
 						},
 					},
+					"interfaces":  []interface{}{},
+					"enumValues":  []interface{}{},
+					"inputFields": []interface{}{},
+					"ofType":      nil,
 				},
 			},
 		},
@@ -339,10 +406,31 @@ func TestIntrospectionForInterface(t *testing.T) {
 								ofType{
 									name
 									kind
+									ofType{
+										name
+										kind
+										ofType{
+											name
+											kind
+										}
+									}
 								}
 							}
 						}
 						interfaces{
+							name
+							kind
+						}
+						possibleTypes{
+							name
+						}
+						enumValues{
+							name
+						}
+						inputFields{
+							name
+						}
+						ofType{
 							name
 							kind
 						}
@@ -358,8 +446,9 @@ func TestIntrospectionForInterface(t *testing.T) {
 							"type": map[string]interface{}{
 								"kind": "NON_NULL",
 								"ofType": map[string]interface{}{
-									"kind": "SCALAR",
-									"name": "String",
+									"kind":   "SCALAR",
+									"name":   "String",
+									"ofType": nil,
 								},
 							},
 						},
@@ -369,8 +458,28 @@ func TestIntrospectionForInterface(t *testing.T) {
 							"type": map[string]interface{}{
 								"kind": "NON_NULL",
 								"ofType": map[string]interface{}{
-									"kind": "SCALAR",
-									"name": "ID",
+									"kind":   "SCALAR",
+									"name":   "ID",
+									"ofType": nil,
+								},
+							},
+						},
+						map[string]interface{}{
+							"args": []interface{}{},
+							"name": "phoneNumbers",
+							"type": map[string]interface{}{
+								"kind": "NON_NULL",
+								"ofType": map[string]interface{}{
+									"kind": "LIST",
+									"name": "",
+									"ofType": map[string]interface{}{
+										"kind": "NON_NULL",
+										"name": "",
+										"ofType": map[string]interface{}{
+											"kind": "SCALAR",
+											"name": "String",
+										},
+									},
 								},
 							},
 						},
@@ -381,8 +490,12 @@ func TestIntrospectionForInterface(t *testing.T) {
 							"name": "Node",
 						},
 					},
-					"kind": "OBJECT",
-					"name": "Customer",
+					"kind":          "OBJECT",
+					"name":          "Customer",
+					"possibleTypes": []interface{}{},
+					"enumValues":    []interface{}{},
+					"inputFields":   []interface{}{},
+					"ofType":        nil,
 				},
 			},
 		},
@@ -403,6 +516,22 @@ func TestIntrospectionForInterface(t *testing.T) {
 								}
 							}
 						}
+						interfaces{
+							name
+						}
+						possibleTypes{
+							name
+						}
+						enumValues{
+							name
+						}
+						fields{
+							name
+						}
+						ofType{
+							name
+							kind
+						}
 					}
 				}
 			`,
@@ -417,8 +546,166 @@ func TestIntrospectionForInterface(t *testing.T) {
 							},
 						},
 					},
-					"kind": "INPUT_OBJECT",
-					"name": "NodeInput",
+					"kind":          "INPUT_OBJECT",
+					"name":          "NodeInput",
+					"interfaces":    []interface{}{},
+					"possibleTypes": []interface{}{},
+					"enumValues":    []interface{}{},
+					"fields":        []interface{}{},
+					"ofType":        nil,
+				},
+			},
+		},
+		{
+			name: "Test Object __Type",
+			query: `
+				{
+					__type(name:"Provider"){
+						name
+						kind
+						fields{
+							name
+							args{
+								name
+							}
+							type{
+								kind
+								ofType{
+									name
+									kind
+									ofType{
+										name
+										kind
+										ofType{
+											name
+											kind
+										}
+									}
+								}
+							}
+						}
+						interfaces{
+							name
+							kind
+						}
+						possibleTypes{
+							name
+						}
+						enumValues{
+							name
+						}
+						inputFields{
+							name
+						}
+						ofType{
+							name
+							kind
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__type": map[string]interface{}{
+					"fields": []interface{}{
+						map[string]interface{}{
+							"args": []interface{}{},
+							"name": "email",
+							"type": map[string]interface{}{
+								"kind": "NON_NULL",
+								"ofType": map[string]interface{}{
+									"kind":   "SCALAR",
+									"name":   "String",
+									"ofType": nil,
+								},
+							},
+						},
+						map[string]interface{}{
+							"args": []interface{}{},
+							"name": "id",
+							"type": map[string]interface{}{
+								"kind": "NON_NULL",
+								"ofType": map[string]interface{}{
+									"kind":   "SCALAR",
+									"name":   "ID",
+									"ofType": nil,
+								},
+							},
+						},
+						map[string]interface{}{
+							"args": []interface{}{},
+							"name": "providerType",
+							"type": map[string]interface{}{
+								"kind": "NON_NULL",
+								"ofType": map[string]interface{}{
+									"kind":   "ENUM",
+									"name":   "ProviderType",
+									"ofType": nil,
+								},
+							},
+						},
+					},
+					"interfaces": []interface{}{
+						map[string]interface{}{
+							"kind": "INTERFACE",
+							"name": "Node",
+						},
+					},
+					"kind":          "OBJECT",
+					"name":          "Provider",
+					"possibleTypes": []interface{}{},
+					"enumValues":    []interface{}{},
+					"inputFields":   []interface{}{},
+					"ofType":        nil,
+				},
+			},
+		},
+		{
+			name: "Test ENUM __Type",
+			query: `
+				{
+					__type(name:"ProviderType"){
+						name
+						kind
+						fields{
+							name
+						}
+						interfaces{
+							name
+							kind
+						}
+						possibleTypes{
+							name
+						}
+						enumValues{
+							name
+						}
+						inputFields{
+							name
+						}
+						ofType{
+							name
+							kind
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__type": map[string]interface{}{
+					"fields":        []interface{}{},
+					"interfaces":    []interface{}{},
+					"kind":          "ENUM",
+					"name":          "ProviderType",
+					"possibleTypes": []interface{}{},
+					"enumValues": []interface{}{
+						map[string]string{
+							"name": "EMPLOYEE",
+						},
+						map[string]string{
+							"name": "VENDOR",
+						},
+					},
+					"inputFields": []interface{}{},
+					"ofType":      nil,
 				},
 			},
 		},
@@ -452,14 +739,23 @@ func TestIntrospectionForInterface(t *testing.T) {
 }
 
 type Customer struct {
-	Id   string
-	Name string
+	Id           string
+	Name         string
+	PhoneNumbers []string
 }
 
 type Provider struct {
 	Id    string
 	Email string
+	Type  ProviderType
 }
+
+type ProviderType int32
+
+const (
+	ProviderType_VENDOR   ProviderType = 0
+	ProviderType_EMPLOYEE ProviderType = 1
+)
 
 type NodeInput struct {
 	Id string
@@ -508,6 +804,7 @@ func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 	s.registerCustomer(schema)
 	s.registerProvider(schema)
 	s.registerNodeInput(schema)
+	s.registerEnumType(schema)
 	schema.Mutation()
 }
 
@@ -526,6 +823,9 @@ func (s *node) registerCustomer(schema *schemabuilder.Schema) {
 	obj.FieldFunc("firstName", func(in *Customer) string {
 		return in.Name
 	})
+	obj.FieldFunc("phoneNumbers", func(in *Customer) []string {
+		return in.PhoneNumbers
+	})
 }
 
 func (s *node) registerProvider(schema *schemabuilder.Schema) {
@@ -535,5 +835,15 @@ func (s *node) registerProvider(schema *schemabuilder.Schema) {
 	})
 	obj.FieldFunc("email", func(in *Provider) string {
 		return in.Email
+	})
+	obj.FieldFunc("providerType", func(in *Provider) ProviderType {
+		return in.Type
+	})
+}
+
+func (s *node) registerEnumType(schema *schemabuilder.Schema) {
+	schema.Enum(ProviderType(0), map[string]interface{}{
+		"VENDOR":   ProviderType(0),
+		"EMPLOYEE": ProviderType(1),
 	})
 }
