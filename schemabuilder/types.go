@@ -3,6 +3,7 @@ package schemabuilder
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -108,8 +109,26 @@ func (s *Object) FieldFunc(name string, f interface{}) {
 }
 
 // FieldFunc is used to expose the fields of an input object and determine the method to fill it
-func (io *InputObject) FieldFunc(name string, f interface{}) {
-	io.Fields[name] = f
+// type ServiceProvider struct {
+// 	Id                   string
+// 	FirstName            string
+// }
+// inputObj := schema.InputObject("serviceProvider", ServiceProvider{})
+// inputObj.FieldFunc("id", func(target *ServiceProvider, source *schemabuilder.ID) {
+// 	target.Id = source.Value
+// })
+// inputObj.FieldFunc("firstName", func(target *ServiceProvider, source *string) {
+// 	target.FirstName = *source
+// })
+// The target variable of the function should be pointer
+func (io *InputObject) FieldFunc(name string, function interface{}) {
+	funcTyp := reflect.TypeOf(function)
+	sourceTyp := funcTyp.In(0)
+	if sourceTyp.Kind() != reflect.Ptr {
+		panic(fmt.Sprintf("Can not register %s on input object %s as the first argument of the function is not a pointer type", name, io.Name))
+	}
+
+	io.Fields[name] = function
 }
 
 // UnmarshalFunc is used to unmarshal scalar value from JSON
