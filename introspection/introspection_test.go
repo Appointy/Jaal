@@ -215,6 +215,10 @@ func TestIntrospectionForInterface(t *testing.T) {
 							"kind": "INPUT_OBJECT",
 						},
 						map[string]interface{}{
+							"name": "OneOf",
+							"kind": "UNION",
+						},
+						map[string]interface{}{
 							"name": "Provider",
 							"kind": "OBJECT",
 						},
@@ -308,6 +312,22 @@ func TestIntrospectionForInterface(t *testing.T) {
 								"type": map[string]interface{}{
 									"kind": "INTERFACE",
 									"name": "Node",
+								},
+							},
+							map[string]interface{}{
+								"args": []interface{}{
+									map[string]interface{}{
+										"name": "in",
+										"type": map[string]interface{}{
+											"kind": "INPUT_OBJECT",
+											"name": "NodeInput",
+										},
+									},
+								},
+								"name": "oneOf",
+								"type": map[string]interface{}{
+									"kind": "UNION",
+									"name": "OneOf",
 								},
 							},
 						},
@@ -709,6 +729,58 @@ func TestIntrospectionForInterface(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Test UNION __Type",
+			query: `
+				{
+					__type(name:"OneOf"){
+						name
+						kind
+						fields{
+							name
+						}
+						possibleTypes{
+							name
+							kind
+						}
+						interfaces{
+							name
+						}
+						enumValues{
+							name
+						}
+						inputFields{
+							name
+						}
+						ofType{
+							name
+							kind
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__type": map[string]interface{}{
+					"fields": []interface{}{},
+					"kind":   "UNION",
+					"name":   "OneOf",
+					"possibleTypes": []interface{}{
+						map[string]interface{}{
+							"kind": "OBJECT",
+							"name": "Customer",
+						},
+						map[string]interface{}{
+							"kind": "OBJECT",
+							"name": "Provider",
+						},
+					},
+					"interfaces":  []interface{}{},
+					"enumValues":  []interface{}{},
+					"inputFields": []interface{}{},
+					"ofType":      nil,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -767,6 +839,12 @@ type Node struct {
 	*Provider
 }
 
+type OneOf struct {
+	schemabuilder.Union
+	*Customer
+	*Provider
+}
+
 type node struct {
 	customers []Customer
 	providers []Provider
@@ -799,6 +877,29 @@ func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 			Customer: &Customer{Id: args.In.Id},
 			Provider: &Provider{Id: args.In.Id},
 		}
+	})
+
+	schema.Query().FieldFunc("oneOf", func(ctx context.Context, args struct {
+		In NodeInput
+	}) *OneOf {
+
+		for _, cus := range s.customers {
+			if cus.Id == args.In.Id {
+				return &OneOf{
+					Customer: &cus,
+				}
+			}
+		}
+
+		for _, pro := range s.providers {
+			if pro.Id == args.In.Id {
+				return &OneOf{
+					Provider: &pro,
+				}
+			}
+		}
+
+		return nil
 	})
 
 	s.registerCustomer(schema)
