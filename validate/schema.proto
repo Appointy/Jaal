@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package graphql;
+
+
+import "google/protobuf/descriptor.proto";
+
+option go_package="go.appointy.com/appointy/jaal/validate";
+
+extend google.protobuf.MethodOptions {
+    MethodOptions schema = 9892748;
+}
+
+message MethodOptions {
+    oneof type {
+        string query = 1;
+        string mutation = 2;
+    }
+}

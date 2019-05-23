@@ -10,4 +10,5 @@ require (
 	github.com/stretchr/testify v1.3.0
 	go.appointy.com/idutil v0.0.0-20190516071107-282c24d3361d
 	golang.org/x/net v0.0.0-20190514140710-3ec191127204
+	google.golang.org/grpc v1.21.0
 )

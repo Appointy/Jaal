@@ -5,8 +5,24 @@ package appointy.class.v1;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
+import "validate/schema.proto";
 
 option go_package="pb";
+
+
+service Classes {
+    rpc CreateClass (CreateClassReq) returns (Class){
+        option (graphql.schema) = {
+            mutation : "createClass"
+        };
+    };
+
+    rpc GetClass (GetClassReq) returns (Class){
+        option (graphql.schema) = {
+            query : "class"
+        };
+    };
+}
 
 message Class{
     string id = 1;
@@ -17,7 +33,7 @@ message Class{
     repeated ServiceProvider instructors = 6;
     oneof charge{
         string per_instance = 7;
-        int32 Lumpsum = 8;
+        int32 lumpsum = 8;
     }
     map<string,string> metadata = 9;
     string parent = 10;
@@ -44,18 +60,4 @@ enum ClassType{
 message ServiceProvider{
     string id = 1;
     string first_name = 2;
-}
-
-message PerInstance{
-    Price cost = 2;
-}
-
-message Lumpsum{
-    Price cost = 1;
-    int32 number_of_sessions = 2;
-}
-
-message Price{
-    int32 amount = 1;
-    string currency = 2;
 }
