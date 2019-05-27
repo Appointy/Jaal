@@ -372,4 +372,49 @@ func TestSkipDirectives(t *testing.T) {
 	if d := pretty.Compare(result, internal.ParseJSON("{}")); d != "" {
 		t.Errorf("unexpected diff: %s", d)
 	}
+
+	//When both skip and include are applied on same field
+	result, err = execute(`
+		query x {
+			value @skip(if: $var) @include(if: $var)
+		}`, map[string]interface{}{"var": true})
+	if err != nil {
+		t.Errorf("expected no err, received %s", err.Error())
+	}
+	if d := pretty.Compare(result, internal.ParseJSON("{}")); d != "" {
+		t.Errorf("unexpected diff: %s", d)
+	}
+
+	result, err = execute(`
+		query x {
+			value @skip(if: $var) @include(if: $var)
+		}`, map[string]interface{}{"var": false})
+	if err != nil {
+		t.Errorf("expected no err, received %s", err.Error())
+	}
+	if d := pretty.Compare(result, internal.ParseJSON("{}")); d != "" {
+		t.Errorf("unexpected diff: %s", d)
+	}
+
+	result, err = execute(`
+		query x {
+			value @skip(if: $var1) @include(if: $var2)
+		}`, map[string]interface{}{"var1": true, "var2": false})
+	if err != nil {
+		t.Errorf("expected no err, received %s", err.Error())
+	}
+	if d := pretty.Compare(result, internal.ParseJSON("{}")); d != "" {
+		t.Errorf("unexpected diff: %s", d)
+	}
+
+	result, err = execute(`
+		query x {
+			value @skip(if: $var1) @include(if: $var2)
+		}`, map[string]interface{}{"var1": false, "var2": true})
+	if err != nil {
+		t.Errorf("expected no err, received %s", err.Error())
+	}
+	if d := pretty.Compare(result, internal.ParseJSON(`{"value": "s"}`)); d != "" {
+		t.Errorf("unexpected diff: %s", d)
+	}
 }

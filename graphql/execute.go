@@ -283,7 +283,12 @@ func shouldIncludeNode(directives []*Directive) (bool, error) {
 	skipDirective := findDirectiveWithName(directives, "skip")
 	if skipDirective != nil {
 		b, err := parseIf(skipDirective)
-		return !b, err
+		if err != nil {
+			return false, err
+		}
+		if b {
+			return false, nil
+		}
 	}
 
 	includeDirective := findDirectiveWithName(directives, "include")

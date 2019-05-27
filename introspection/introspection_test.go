@@ -788,6 +788,103 @@ func TestIntrospectionForInterface(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Test Directives",
+			query: `
+				{
+					__schema{
+						directives{
+							name
+							description
+							locations
+							args{
+								name
+								description
+								type{
+									name
+									kind
+									description
+									fields{
+										name
+									}
+									interfaces{
+										name
+									}
+									possibleTypes{
+										name
+									}
+									enumValues{
+										name
+									}
+									inputFields{
+										name
+									}
+								}
+								defaultValue
+							}
+						}
+					}
+				}
+			`,
+			expectedResult: map[string]interface{}{
+				"__schema": map[string]interface{}{
+					"directives": []interface{}{
+						map[string]interface{}{
+							"name":        "include",
+							"description": "Directs the executor to include this field or fragment only when the `if` argument is true.",
+							"locations": []interface{}{
+								"FIELD",
+								"FRAGMENT_SPREAD",
+								"INLINE_FRAGMENT",
+							},
+							"args": []interface{}{
+								map[string]interface{}{
+									"name":         "if",
+									"description":  "Included when true.",
+									"defaultValue": nil,
+									"type": map[string]interface{}{
+										"name":          "bool",
+										"kind":          "SCALAR",
+										"description":   "",
+										"fields":        []interface{}{},
+										"interfaces":    []interface{}{},
+										"possibleTypes": []interface{}{},
+										"enumValues":    []interface{}{},
+										"inputFields":   []interface{}{},
+									},
+								},
+							},
+						},
+						map[string]interface{}{
+							"name":        "skip",
+							"description": "Directs the executor to skip this field or fragment only when the `if` argument is true.",
+							"locations": []interface{}{
+								"FIELD",
+								"FRAGMENT_SPREAD",
+								"INLINE_FRAGMENT",
+							},
+							"args": []interface{}{
+								map[string]interface{}{
+									"name":         "if",
+									"description":  "Skipped when true.",
+									"defaultValue": nil,
+									"type": map[string]interface{}{
+										"name":          "bool",
+										"kind":          "SCALAR",
+										"description":   "",
+										"fields":        []interface{}{},
+										"interfaces":    []interface{}{},
+										"possibleTypes": []interface{}{},
+										"enumValues":    []interface{}{},
+										"inputFields":   []interface{}{},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
