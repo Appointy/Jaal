@@ -6,7 +6,6 @@ import (
 	"context"
 
 	duration "github.com/golang/protobuf/ptypes/duration"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/schemabuilder"
 )
@@ -73,9 +72,6 @@ func registerClass(schema *schemabuilder.Schema) {
 	})
 	obj.FieldFunc("duration", func(ctx context.Context, in *Class) *duration.Duration {
 		return in.Duration
-	})
-	obj.FieldFunc("empty", func(ctx context.Context, in *Class) *empty.Empty {
-		return in.Empty
 	})
 
 	obj = schema.Object("ServiceProvider", ServiceProvider{})

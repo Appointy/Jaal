@@ -6,7 +6,6 @@ import (
 	"context"
 
 	duration "github.com/golang/protobuf/ptypes/duration"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/gtypes"
 	"go.appointy.com/jaal/schemabuilder"
@@ -157,9 +156,6 @@ func RegisterPayloadClass(schema *schemabuilder.Schema) {
 	})
 	payload.FieldFunc("duration", func(ctx context.Context, in *Class) *duration.Duration {
 		return in.Duration
-	})
-	payload.FieldFunc("empty", func(ctx context.Context, in *Class) *empty.Empty {
-		return in.Empty
 	})
 }
 

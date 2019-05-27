@@ -4,7 +4,6 @@ package appointy.class.v1;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "google/protobuf/empty.proto";
 import "schema/schema.proto";
 
 option go_package="pb";
@@ -39,7 +38,6 @@ message Class{
     string parent = 10;
     google.protobuf.Timestamp start_date = 11;
     google.protobuf.Duration duration = 12;
-    google.protobuf.Empty empty = 13;
 }
 
 message CreateClassReq{

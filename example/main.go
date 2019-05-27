@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/appointy/idgen"
-	"github.com/golang/protobuf/ptypes/empty"
 	"go.appointy.com/jaal"
 	"go.appointy.com/jaal/example/pb"
 	"go.appointy.com/jaal/gtypes"
@@ -64,7 +63,6 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 		In *pb.CreateClassReq
 	}) *pb.Class {
 		args.In.Class.Id = idgen.New("cls")
-		args.In.Class.Empty = &empty.Empty{}
 		s.classes = append(s.classes, args.In.Class)
 
 		return args.In.Class
