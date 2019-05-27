@@ -2,10 +2,9 @@ syntax = "proto3";
 
 package graphql;
 
-
 import "google/protobuf/descriptor.proto";
 
-option go_package="go.appointy.com/appointy/jaal/validate";
+option go_package="go.appointy.com/jaal/schema";
 
 extend google.protobuf.MethodOptions {
     MethodOptions schema = 9892748;
