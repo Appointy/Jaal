@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"go.appointy.com/appointy/jaal/graphql"
+	"go.appointy.com/jaal/graphql"
 )
 
 // argField is a representation of an input parameter field for a function.  It

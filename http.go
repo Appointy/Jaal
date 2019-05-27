@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"go.appointy.com/appointy/jaal/graphql"
+	"go.appointy.com/jaal/graphql"
 )
 
 //HTTPHandler implements the handler required for executing the graphql queries

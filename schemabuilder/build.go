@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"go.appointy.com/appointy/jaal/graphql"
+	"go.appointy.com/jaal/graphql"
 )
 
 // schemaBuilder is a struct for holding all the graph information for types as

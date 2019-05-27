@@ -1,4 +1,4 @@
-module go.appointy.com/appointy/jaal
+module go.appointy.com/jaal
 
 require (
 	github.com/appointy/idgen v0.0.0-20190227121039-a884768ebb9d
@@ -8,7 +8,6 @@ require (
 	github.com/kylelemons/godebug v1.1.0
 	github.com/srikrsna/sqlx v0.0.0-20180828084051-e347d2855cc9
 	github.com/stretchr/testify v1.3.0
-	go.appointy.com/idutil v0.0.0-20190516071107-282c24d3361d
-	golang.org/x/net v0.0.0-20190514140710-3ec191127204
+	golang.org/x/net v0.0.0-20190514140710-3ec191127204 // indirect
 	google.golang.org/grpc v1.21.0
 )

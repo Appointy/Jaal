@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
-	"go.appointy.com/appointy/jaal/graphql"
-	"go.appointy.com/appointy/jaal/internal"
-	"go.appointy.com/appointy/jaal/schemabuilder"
+	"go.appointy.com/jaal/graphql"
+	"go.appointy.com/jaal/internal"
+	"go.appointy.com/jaal/schemabuilder"
 )
 
 type GatewayType int

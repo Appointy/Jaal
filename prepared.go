@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"time"
 
-	"go.appointy.com/appointy/jaal/graphql"
+	"go.appointy.com/jaal/graphql"
 )
 
 type addQueryHandler struct {

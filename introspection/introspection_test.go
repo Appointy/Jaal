@@ -7,11 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"go.appointy.com/appointy/jaal/graphql"
+	"go.appointy.com/jaal/graphql"
 
 	"github.com/stretchr/testify/require"
-	"go.appointy.com/appointy/jaal/introspection"
-	"go.appointy.com/appointy/jaal/schemabuilder"
+	"go.appointy.com/jaal/introspection"
+	"go.appointy.com/jaal/schemabuilder"
 )
 
 type User struct {

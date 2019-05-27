@@ -8,8 +8,8 @@ import (
 
 	"github.com/kylelemons/godebug/pretty"
 
-	"go.appointy.com/appointy/jaal"
-	"go.appointy.com/appointy/jaal/schemabuilder"
+	"go.appointy.com/jaal"
+	"go.appointy.com/jaal/schemabuilder"
 )
 
 func testHTTPRequest(req *http.Request) *httptest.ResponseRecorder {

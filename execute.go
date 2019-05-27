@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/srikrsna/sqlx"
-	"go.appointy.com/appointy/jaal/graphql"
+	"go.appointy.com/jaal/graphql"
 )
 
 type executeQuery struct {

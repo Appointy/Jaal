@@ -2,13 +2,9 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"strings"
 
-	"go.appointy.com/appointy/jaal"
-	"go.appointy.com/appointy/jaal/introspection"
-	"go.appointy.com/appointy/jaal/schemabuilder"
+	"go.appointy.com/jaal/schemabuilder"
 )
 
 type node struct {
@@ -71,7 +67,7 @@ func (s *node) registerNodeInterface(schema *schemabuilder.Schema) {
 	schema.Mutation()
 }
 
-func (s *node) registerNodeInput(schema *schemabuilder.Schema){
+func (s *node) registerNodeInput(schema *schemabuilder.Schema) {
 	input := schema.InputObject("NodeInput", NodeInput{})
 	input.FieldFunc("id", func(target *NodeInput, source *schemabuilder.ID) {
 		target.Id = source.Value
@@ -98,34 +94,34 @@ func (s *node) registerB(schema *schemabuilder.Schema) {
 	})
 }
 
-func main() {
-	s := node{
-		customers: []Customer{
-			{
-				Id:   "cus_01DBF6E5CE9JY03HP3XGAVRAAC",
-				Name: "Anuj",
-			},
-		},
-		providers: []Provider{
-			{
-				Id:    "pro_01DBF6E5CE9JY03HP3XGMTCFR7",
-				Email: "anuj.g@appointy.com",
-			},
-		},
-	}
+// func main() {
+// 	s := node{
+// 		customers: []Customer{
+// 			{
+// 				Id:   "cus_01DBF6E5CE9JY03HP3XGAVRAAC",
+// 				Name: "Anuj",
+// 			},
+// 		},
+// 		providers: []Provider{
+// 			{
+// 				Id:    "pro_01DBF6E5CE9JY03HP3XGMTCFR7",
+// 				Email: "anuj.g@appointy.com",
+// 			},
+// 		},
+// 	}
 
-	fmt.Println(s.customers[0], s.providers[0])
+// 	fmt.Println(s.customers[0], s.providers[0])
 
-	builder := schemabuilder.NewSchema()
-	s.registerNodeInterface(builder)
+// 	builder := schemabuilder.NewSchema()
+// 	s.registerNodeInterface(builder)
 
-	schema := builder.MustBuild()
+// 	schema := builder.MustBuild()
 
-	introspection.AddIntrospectionToSchema(schema)
+// 	introspection.AddIntrospectionToSchema(schema)
 
-	http.Handle("/graphql", jaal.HTTPHandler(schema))
-	fmt.Println("Running")
-	if err := http.ListenAndServe(":3000", nil); err != nil {
-		panic(err)
-	}
-}
+// 	http.Handle("/graphql", jaal.HTTPHandler(schema))
+// 	fmt.Println("Running")
+// 	if err := http.ListenAndServe(":3000", nil); err != nil {
+// 		panic(err)
+// 	}
+// }

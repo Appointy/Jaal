@@ -11,7 +11,7 @@ import (
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"go.appointy.com/appointy/jaal/schemabuilder"
+	"go.appointy.com/jaal/schemabuilder"
 )
 
 //Schema is used to build the graphql schema

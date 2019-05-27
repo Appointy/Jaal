@@ -8,8 +8,8 @@ import (
 	duration "github.com/golang/protobuf/ptypes/duration"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	"go.appointy.com/appointy/jaal/gtypes"
-	"go.appointy.com/appointy/jaal/schemabuilder"
+	"go.appointy.com/jaal/gtypes"
+	"go.appointy.com/jaal/schemabuilder"
 )
 
 func init() {
