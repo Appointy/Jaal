@@ -79,9 +79,6 @@ func RegisterInputClass(schema *schemabuilder.Schema) {
 	input.FieldFunc("area", func(target *Class, source *float32) {
 		target.Area = *source
 	})
-	input.FieldFunc("area", func(target *Class, source *float32) {
-		target.Area = *source
-	})
 	input.FieldFunc("strength", func(target *Class, source *int32) {
 		target.Strength = *source
 	})
