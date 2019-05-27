@@ -85,6 +85,9 @@ func RegisterInputClass(schema *schemabuilder.Schema) {
 	input.FieldFunc("strength", func(target *Class, source *int32) {
 		target.Strength = *source
 	})
+	input.FieldFunc("isDeleted", func(target *Class, source *bool) {
+		target.IsDeleted = *source
+	})
 	input.FieldFunc("type", func(target *Class, source *ClassType) {
 		target.Type = *source
 	})
