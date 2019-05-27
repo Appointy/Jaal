@@ -99,10 +99,10 @@ func (e *Executor) executeUnion(ctx context.Context, typ *Union, source interfac
 		possibleTypes = append(possibleTypes, graphqlTyp.String())
 
 		for _, fragment := range selectionSet.Fragments {
-			if fragment.On != typString {
+			if fragment.Fragment.On != typString {
 				continue
 			}
-			resolved, err := e.executeObject(ctx, graphqlTyp, inner.Interface(), fragment.SelectionSet)
+			resolved, err := e.executeObject(ctx, graphqlTyp, inner.Interface(), fragment.Fragment.SelectionSet)
 			if err != nil {
 				return nil, fmt.Errorf("%v - %v", typString, err)
 			}
@@ -126,12 +126,21 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 		return nil, nil
 	}
 
-	selections := Flatten(selectionSet)
+	selections, err := Flatten(selectionSet)
+	if err != nil {
+		return nil, err
+	}
 
 	fields := make(map[string]interface{})
 
 	// for every selection, resolve the value and store it in the output object
 	for _, selection := range selections {
+		if ok, err := shouldIncludeNode(selection.Directives); err != nil {
+			return nil, fmt.Errorf("%s - %s", selection.Alias, err)
+		} else if !ok {
+			continue
+		}
+
 		if selection.Name == "__typename" {
 			fields[selection.Alias] = typ.Name
 			continue
@@ -219,7 +228,10 @@ func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source 
 			continue
 		}
 		possibleTypes = append(possibleTypes, graphqlTyp.String())
-		selections := Flatten(selectionSet)
+		selections, err := Flatten(selectionSet)
+		if err != nil {
+			return nil, err
+		}
 		// for every selection, resolve the value and store it in the output object
 		for _, selection := range selections {
 			if selection.Name == "__typename" {
@@ -243,4 +255,41 @@ func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source 
 		return nil, fmt.Errorf("interface type field should only return one value, but received: %s", strings.Join(possibleTypes, " "))
 	}
 	return fields, nil
+}
+
+func findDirectiveWithName(directives []*Directive, name string) *Directive {
+	for _, directive := range directives {
+		if directive.Name == name {
+			return directive
+		}
+	}
+	return nil
+}
+
+func shouldIncludeNode(directives []*Directive) (bool, error) {
+	parseIf := func(d *Directive) (bool, error) {
+		args := d.Args.(map[string]interface{})
+		if args["if"] == nil {
+			return false, fmt.Errorf("required argument not provided: if")
+		}
+
+		if _, ok := args["if"].(bool); !ok {
+			return false, fmt.Errorf("expected type Boolean, found %v", args["if"])
+		}
+
+		return args["if"].(bool), nil
+	}
+
+	skipDirective := findDirectiveWithName(directives, "skip")
+	if skipDirective != nil {
+		b, err := parseIf(skipDirective)
+		return !b, err
+	}
+
+	includeDirective := findDirectiveWithName(directives, "include")
+	if includeDirective != nil {
+		return parseIf(includeDirective)
+	}
+
+	return true, nil
 }

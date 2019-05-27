@@ -3,9 +3,7 @@ package introspection
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"reflect"
 	"sort"
 
 	"go.appointy.com/appointy/jaal/graphql"
@@ -27,6 +25,7 @@ const (
 	FRAGMENT_DEFINITION                   = "FRAGMENT_DEFINITION"
 	FRAGMENT_SPREAD                       = "FRAGMENT_SPREAD"
 	INLINE_FRAGMENT                       = "INLINE_FRAGMENT"
+	SUBSCRIPTION                          = "SUBSCRIPTION"
 )
 
 type TypeKind string
@@ -110,16 +109,26 @@ func (s *introspection) registerDirective(schema *schemabuilder.Schema) {
 		return in.Args
 	})
 
-	if err := schemabuilder.RegisterScalar(reflect.TypeOf(DirectiveLocation("")), "directiveLocation", func(value interface{}, dest reflect.Value) error {
-		asString, ok := value.(string)
-		if !ok {
-			return errors.New("not a string")
-		}
-		dest.Set(reflect.ValueOf(asString).Convert(dest.Type()))
-		return nil
-	}); err != nil {
-		panic(err)
-	}
+	// if err := schemabuilder.RegisterScalar(reflect.TypeOf(DirectiveLocation("")), "directiveLocation", func(value interface{}, dest reflect.Value) error {
+	// 	asString, ok := value.(string)
+	// 	if !ok {
+	// 		return errors.New("not a string")
+	// 	}
+	// 	dest.Set(reflect.ValueOf(asString).Convert(dest.Type()))
+	// 	return nil
+	// }); err != nil {
+	// 	panic(err)
+	// }
+
+	schema.Enum(DirectiveLocation("QUERY"), map[string]interface{}{
+		"QUERY":               DirectiveLocation("QUERY"),
+		"MUTATION":            DirectiveLocation("MUTATION"),
+		"FIELD":               DirectiveLocation("FIELD"),
+		"FRAGMENT_DEFINITION": DirectiveLocation("FRAGMENT_DEFINITION"),
+		"FRAGMENT_SPREAD":     DirectiveLocation("FRAGMENT_SPREAD"),
+		"INLINE_FRAGMENT":     DirectiveLocation("INLINE_FRAGMENT"),
+		"SUBSCRIPTION":        DirectiveLocation("SUBSCRIPTION"),
+	})
 }
 
 type Schema struct {
@@ -444,6 +453,40 @@ func collectTypes(typ graphql.Type, types map[string]graphql.Type) {
 	}
 }
 
+var includeDirective = Directive{
+	Description: "Directs the executor to include this field or fragment only when the `if` argument is true.",
+	Locations: []DirectiveLocation{
+		FIELD,
+		FRAGMENT_SPREAD,
+		INLINE_FRAGMENT,
+	},
+	Name: "include",
+	Args: []InputValue{
+		InputValue{
+			Name:        "if",
+			Type:        Type{Inner: &graphql.Scalar{Type: "bool"}},
+			Description: "Included when true.",
+		},
+	},
+}
+
+var skipDirective = Directive{
+	Description: "Directs the executor to skip this field or fragment only when the `if` argument is true.",
+	Locations: []DirectiveLocation{
+		FIELD,
+		FRAGMENT_SPREAD,
+		INLINE_FRAGMENT,
+	},
+	Name: "skip",
+	Args: []InputValue{
+		InputValue{
+			Name:        "if",
+			Type:        Type{Inner: &graphql.Scalar{Type: "bool"}},
+			Description: "Skipped when true.",
+		},
+	},
+}
+
 func (s *introspection) registerQuery(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
@@ -459,6 +502,7 @@ func (s *introspection) registerQuery(schema *schemabuilder.Schema) {
 			Types:        types,
 			QueryType:    &Type{Inner: s.query},
 			MutationType: &Type{Inner: s.mutation},
+			Directives:   []Directive{includeDirective, skipDirective},
 		}
 	})
 

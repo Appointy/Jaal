@@ -1,6 +1,7 @@
 package graphql_test
 
 import (
+	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -40,20 +41,23 @@ fragment Bar on Foo {
 		SelectionSet: &SelectionSet{
 			Selections: []*Selection{
 				{
-					Name:  "foo",
-					Alias: "foo",
-					Args:  map[string]interface{}{},
+					Name:       "foo",
+					Alias:      "foo",
+					Args:       map[string]interface{}{},
+					Directives: []*Directive{},
 					SelectionSet: &SelectionSet{
 						Selections: []*Selection{
 							{
-								Name:  "bar",
-								Alias: "alias",
-								Args:  map[string]interface{}{},
+								Name:       "bar",
+								Alias:      "alias",
+								Args:       map[string]interface{}{},
+								Directives: []*Directive{},
 							},
 							{
-								Name:  "bar",
-								Alias: "alias",
-								Args:  map[string]interface{}{},
+								Name:       "bar",
+								Alias:      "alias",
+								Args:       map[string]interface{}{},
+								Directives: []*Directive{},
 							},
 							{
 								Name:  "baz",
@@ -61,6 +65,7 @@ fragment Bar on Foo {
 								Args: map[string]interface{}{
 									"arg": float64(3),
 								},
+								Directives: []*Directive{},
 								SelectionSet: &SelectionSet{
 									Selections: []*Selection{
 										{
@@ -71,6 +76,7 @@ fragment Bar on Foo {
 												"y": "123",
 												"z": true,
 											},
+											Directives: []*Directive{},
 										},
 										{
 											Name:  "hum",
@@ -84,51 +90,65 @@ fragment Bar on Foo {
 													[]interface{}{float64(4), float64(5)},
 												},
 											},
+											Directives: []*Directive{},
 										},
 									},
 								},
 							},
 						},
-						Fragments: []*Fragment{
+						Fragments: []*FragmentSpread{
 							{
-								On: "Foo",
-								SelectionSet: &SelectionSet{
-									Selections: []*Selection{
-										{
-											Name:  "asd",
-											Alias: "asd",
-											Args:  map[string]interface{}{},
+								Fragment: &FragmentDefinition{
+									On: "Foo",
+									SelectionSet: &SelectionSet{
+										Selections: []*Selection{
+											{
+												Name:       "asd",
+												Alias:      "asd",
+												Args:       map[string]interface{}{},
+												Directives: []*Directive{},
+											},
 										},
-									},
-									Fragments: []*Fragment{
-										{
-											On: "Foo",
-											SelectionSet: &SelectionSet{
-												Selections: []*Selection{
-													{
-														Name:  "zxc",
-														Alias: "zxc",
-														Args:  map[string]interface{}{},
+										Fragments: []*FragmentSpread{
+											{
+												Fragment: &FragmentDefinition{
+													Name: "Bar",
+													On:   "Foo",
+													SelectionSet: &SelectionSet{
+														Selections: []*Selection{
+															{
+																Name:       "zxc",
+																Alias:      "zxc",
+																Args:       map[string]interface{}{},
+																Directives: []*Directive{},
+															},
+														},
 													},
 												},
+												Directives: []*Directive{},
 											},
 										},
 									},
 								},
+								Directives: []*Directive{},
 							},
 						},
 					},
 				},
 				{
-					Name:  "xyz",
-					Alias: "xyz",
-					Args:  map[string]interface{}{},
+					Name:       "xyz",
+					Alias:      "xyz",
+					Args:       map[string]interface{}{},
+					Directives: []*Directive{},
 				},
 			},
 		},
 	}
 
-	if !reflect.DeepEqual(query, expected) {
+	got, _ := json.Marshal(query)
+	exp, _ := json.Marshal(*expected)
+	if !reflect.DeepEqual(string(got), string(exp)) {
+		t.Logf("\ngot : %v \n\n expected %v\n\n", string(got), string(exp))
 		t.Error("unexpected parse")
 	}
 
@@ -149,9 +169,10 @@ mutation foo($var: bar) {
 		SelectionSet: &SelectionSet{
 			Selections: []*Selection{
 				{
-					Name:  "baz",
-					Alias: "baz",
-					Args:  map[string]interface{}{},
+					Name:       "baz",
+					Alias:      "baz",
+					Args:       map[string]interface{}{},
+					Directives: []*Directive{},
 				},
 			},
 		},
@@ -206,14 +227,6 @@ func TestParseUnsupported(t *testing.T) {
 }`, map[string]interface{}{})
 	if err == nil || err.Error() != "same alias with different name" {
 		t.Error("expected different names in fragment to fail", err)
-	}
-
-	_, err = Parse(`
-{
-	a @test
-}`, map[string]interface{}{})
-	if err == nil || err.Error() != "directives not supported" {
-		t.Error("expected directives to fail", err)
 	}
 
 	_, err = Parse(`
@@ -278,5 +291,18 @@ query Operation($x: int64 = 2) {
 
 	if val := args["x"]; val != float64(2) {
 		t.Errorf("expected 2, received %v", val)
+	}
+}
+
+func TestSkippedFragment(t *testing.T) {
+	_, err := Parse(`query Test($something: bool) {
+		something @skip(if: $something) {
+			...Frag
+		}
+	}
+ 	fragment Frag on Something { somethingElse }`, map[string]interface{}{"something": true})
+
+	if err != nil {
+		t.Errorf("expected no error, received %s", err.Error())
 	}
 }

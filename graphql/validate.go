@@ -25,10 +25,10 @@ func ValidateQuery(ctx context.Context, typ Type, selectionSet *SelectionSet) er
 
 		for _, fragment := range selectionSet.Fragments {
 			for typString, graphqlTyp := range typ.Types {
-				if fragment.On != typString {
+				if fragment.Fragment.On != typString {
 					continue
 				}
-				if err := ValidateQuery(ctx, graphqlTyp, fragment.SelectionSet); err != nil {
+				if err := ValidateQuery(ctx, graphqlTyp, fragment.Fragment.SelectionSet); err != nil {
 					return err
 				}
 			}
@@ -42,7 +42,7 @@ func ValidateQuery(ctx context.Context, typ Type, selectionSet *SelectionSet) er
 					return fmt.Errorf(`scalar field "__typename" must have no selection`)
 				}
 				for _, fragment := range selectionSet.Fragments {
-					fragment.SelectionSet.Selections = append(fragment.SelectionSet.Selections, selection)
+					fragment.Fragment.SelectionSet.Selections = append(fragment.Fragment.SelectionSet.Selections, selection)
 				}
 				continue
 			}
@@ -56,10 +56,10 @@ func ValidateQuery(ctx context.Context, typ Type, selectionSet *SelectionSet) er
 		}
 		for _, fragment := range selectionSet.Fragments {
 			for typString, graphqlTyp := range typ.Types {
-				if fragment.On != typString {
+				if fragment.Fragment.On != typString {
 					continue
 				}
-				if err := ValidateQuery(ctx, graphqlTyp, fragment.SelectionSet); err != nil {
+				if err := ValidateQuery(ctx, graphqlTyp, fragment.Fragment.SelectionSet); err != nil {
 					return err
 				}
 			}
@@ -128,7 +128,7 @@ func ValidateQuery(ctx context.Context, typ Type, selectionSet *SelectionSet) er
 			}
 		}
 		for _, fragment := range selectionSet.Fragments {
-			if err := ValidateQuery(ctx, typ, fragment.SelectionSet); err != nil {
+			if err := ValidateQuery(ctx, typ, fragment.Fragment.SelectionSet); err != nil {
 				return err
 			}
 		}

@@ -51,7 +51,7 @@ type Object struct {
 	Description string
 	KeyField    *Field
 	Fields      map[string]*Field
-	Interfaces  map[string]*Interface
+	Interfaces  map[string]*Interface //For introspection only
 }
 
 func (o *Object) isType() {}
@@ -177,7 +177,7 @@ type Schema struct {
 // selections are stored in an array instead of a map.
 type SelectionSet struct {
 	Selections []*Selection
-	Fragments  []*Fragment
+	Fragments  []*FragmentSpread
 }
 
 //Selection : A selection represents a part of a GraphQL query
@@ -195,6 +195,7 @@ type Selection struct {
 	Alias        string
 	Args         interface{}
 	SelectionSet *SelectionSet
+	Directives   []*Directive
 
 	UseBatch bool
 
@@ -203,12 +204,25 @@ type Selection struct {
 	parsed bool
 }
 
-// A Fragment represents a reusable part of a GraphQL query
+// A FragmentDefinition represents a reusable part of a GraphQL query
 //
-// The On part of a Fragment represents the type of source object for which
-// this Fragment should be used. That is not currently implemented in this
+// The On part of a FragmentDefinition represents the type of source object for which
+// this FragmentDefinition should be used. That is not currently implemented in this
 // package.
-type Fragment struct {
+type FragmentDefinition struct {
+	Name         string
 	On           string
 	SelectionSet *SelectionSet
+}
+
+// FragmentSpread represents a usage of a FragmentDefinition. Alongside the information
+// about the fragment, it includes any directives used at that spread location.
+type FragmentSpread struct {
+	Fragment   *FragmentDefinition
+	Directives []*Directive
+}
+
+type Directive struct {
+	Name string
+	Args interface{}
 }

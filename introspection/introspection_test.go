@@ -241,7 +241,14 @@ func TestIntrospectionForInterface(t *testing.T) {
 						"fields": []interface{}{},
 					},
 					"subscriptionType": nil,
-					"directives":       []interface{}{},
+					"directives": []interface{}{
+						map[string]interface{}{
+							"name": "include",
+						},
+						map[string]interface{}{
+							"name": "skip",
+						},
+					},
 				},
 			},
 		},
