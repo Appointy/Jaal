@@ -1,0 +1,61 @@
+syntax="proto3";
+
+package appointy.class.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "schema/schema.proto";
+
+option go_package="pb";
+
+
+service Classes {
+    rpc CreateClass (CreateClassReq) returns (Class){
+        option (graphql.schema) = {
+            mutation : "createClass"
+        };
+    };
+
+    rpc GetClass (GetClassReq) returns (Class){
+        option (graphql.schema) = {
+            query : "class"
+        };
+    };
+}
+
+message Class{
+    string id = 1;
+    float area = 2;
+    int32 strength = 3;
+    bool is_deleted = 4;
+    ClassType type = 5;
+    repeated ServiceProvider instructors = 6;
+    oneof charge{
+        string per_instance = 7;
+        int32 lumpsum = 8;
+    }
+    map<string,string> metadata = 9;
+    string parent = 10;
+    google.protobuf.Timestamp start_date = 11;
+    google.protobuf.Duration duration = 12;
+}
+
+message CreateClassReq{
+    string parent = 1;
+    Class class= 2;
+}
+
+message GetClassReq{
+    string id = 1;
+}
+
+enum ClassType{
+    INVALID = 0;
+    REGULAR = 1;
+    SERIES = 2;
+}
+
+message ServiceProvider{
+    string id = 1;
+    string first_name = 2;
+}
