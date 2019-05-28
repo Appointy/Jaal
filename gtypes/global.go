@@ -1,6 +1,7 @@
 package gtypes
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -12,6 +13,7 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/schemabuilder"
+	"google.golang.org/genproto/protobuf/field_mask"
 )
 
 //Schema is used to build the graphql schema
@@ -19,6 +21,8 @@ var Schema = schemabuilder.NewSchema()
 
 func init() {
 	RegisterWellKnownTypes()
+	RegisterInputFieldMask()
+	RegisterPayloadFieldMask()
 }
 
 //RegisterWellKnownTypes registers the commonly used scalars
@@ -102,5 +106,20 @@ func RegisterTimestamp() {
 		target.Field(0).SetInt(int64(t.Second()))
 		target.Field(1).SetInt(int64(t.Nanosecond()))
 		return nil
+	})
+}
+
+func RegisterInputFieldMask() {
+	input := Schema.InputObject("FieldMask", field_mask.FieldMask{})
+	input.FieldFunc("paths", func(target *field_mask.FieldMask, source []string) {
+		target.Paths = source
+	})
+
+}
+
+func RegisterPayloadFieldMask() {
+	payload := Schema.Object("FieldMask", field_mask.FieldMask{})
+	payload.FieldFunc("paths", func(ctx context.Context, in *field_mask.FieldMask) []string {
+		return in.Paths
 	})
 }

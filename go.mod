@@ -9,5 +9,6 @@ require (
 	github.com/srikrsna/sqlx v0.0.0-20180828084051-e347d2855cc9
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/net v0.0.0-20190514140710-3ec191127204 // indirect
+	google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8
 	google.golang.org/grpc v1.21.0
 )
