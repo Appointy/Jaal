@@ -128,7 +128,7 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 	obj := sb.inputObjects[typ]
 	fields := make(map[string]argField)
 	argType := &graphql.InputObject{
-		Name:        typ.Name(),
+		Name:        obj.Name,
 		InputFields: make(map[string]graphql.Type),
 	}
 	//TODO: While adding field in input object, add a validation of matching the types i.e. the target is same as that of input object and is a ptr type
@@ -160,7 +160,7 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 			target := reflect.New(typ)
 			for name, field := range fields {
 				value, exists := asMap[name]
-				if !exists{
+				if !exists {
 					continue
 				}
 				function := obj.Fields[name]

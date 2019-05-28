@@ -39,7 +39,7 @@ func main() {
 
 	http.Handle("/graphql", jaal.HTTPHandler(schema))
 	fmt.Println("Running")
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	if err := http.ListenAndServe(":3030", nil); err != nil {
 		panic(err)
 	}
 

@@ -94,7 +94,7 @@ func registerClass(schema *schemabuilder.Schema) {
 }
 
 func registerCreateClassReq(schema *schemabuilder.Schema) {
-	inputObj := schema.InputObject("createClassReq", CreateClassReq{})
+	inputObj := schema.InputObject("CreateClassReq", CreateClassReq{})
 	inputObj.FieldFunc("parent", func(target *CreateClassReq, source *string) {
 		target.Parent = *source
 	})
@@ -102,7 +102,7 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 		target.Class = source
 	})
 
-	inputObj = schema.InputObject("class", Class{})
+	inputObj = schema.InputObject("ClassInput", Class{})
 	inputObj.FieldFunc("id", func(target *Class, source *schemabuilder.ID) {
 		target.Id = source.Value
 	})
@@ -140,7 +140,7 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 		target.StartDate = source
 	})
 
-	inputObj = schema.InputObject("serviceProvider", ServiceProvider{})
+	inputObj = schema.InputObject("ServiceProviderInput", ServiceProvider{})
 	inputObj.FieldFunc("id", func(target *ServiceProvider, source *schemabuilder.ID) {
 		target.Id = source.Value
 	})
@@ -148,12 +148,12 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 		target.FirstName = *source
 	})
 
-	inputObj = schema.InputObject("classLumpsum", Class_Lumpsum{})
+	inputObj = schema.InputObject("ClassLumpsumInput", Class_Lumpsum{})
 	inputObj.FieldFunc("lumpsum", func(target *Class_Lumpsum, source *int32) {
 		target.Lumpsum = *source
 	})
 
-	inputObj = schema.InputObject("classPerInstance", Class_PerInstance{})
+	inputObj = schema.InputObject("ClassPerInstanceInput", Class_PerInstance{})
 	inputObj.FieldFunc("perInstance", func(target *Class_PerInstance, source *string) {
 		target.PerInstance = *source
 	})
@@ -161,7 +161,7 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 }
 
 func registerGetClassReq(schema *schemabuilder.Schema) {
-	inputObj := schema.InputObject("getClassReq", GetClassReq{})
+	inputObj := schema.InputObject("GetClassInput", GetClassReq{})
 	inputObj.FieldFunc("id", func(target *GetClassReq, source *schemabuilder.ID) {
 		target.Id = source.Value
 	})
