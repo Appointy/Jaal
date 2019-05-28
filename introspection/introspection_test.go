@@ -283,6 +283,10 @@ func TestIntrospectionForInterface(t *testing.T) {
 									type{
 										name
 										kind
+										ofType{
+											name
+											kind
+										}
 									}
 								}
 								type{
@@ -310,8 +314,12 @@ func TestIntrospectionForInterface(t *testing.T) {
 									map[string]interface{}{
 										"name": "in",
 										"type": map[string]interface{}{
-											"kind": "INPUT_OBJECT",
-											"name": "NodeInput",
+											"kind": "NON_NULL",
+											"name": "",
+											"ofType": map[string]interface{}{
+												"name": "NodeInput",
+												"kind": "INPUT_OBJECT",
+											},
 										},
 									},
 								},
@@ -326,8 +334,12 @@ func TestIntrospectionForInterface(t *testing.T) {
 									map[string]interface{}{
 										"name": "in",
 										"type": map[string]interface{}{
-											"kind": "INPUT_OBJECT",
-											"name": "NodeInput",
+											"kind": "NON_NULL",
+											"name": "",
+											"ofType": map[string]interface{}{
+												"name": "NodeInput",
+												"kind": "INPUT_OBJECT",
+											},
 										},
 									},
 								},
@@ -907,7 +919,7 @@ func TestIntrospectionForInterface(t *testing.T) {
 			b, _ := json.Marshal(tt.expectedResult)
 
 			if !reflect.DeepEqual(a, b) {
-				t.Fatalf("got : \n%v\n\n\nactual : \n%v", string(a), string(b))
+				t.Fatalf("%v Failed\ngot : \n%v\n\n\nactual : \n%v", tt.name, string(a), string(b))
 			}
 
 		})
