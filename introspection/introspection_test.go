@@ -843,7 +843,7 @@ func TestIntrospectionForInterface(t *testing.T) {
 									"description":  "Included when true.",
 									"defaultValue": nil,
 									"type": map[string]interface{}{
-										"name":          "bool",
+										"name":          "Boolean",
 										"kind":          "SCALAR",
 										"description":   "",
 										"fields":        []interface{}{},
@@ -869,7 +869,7 @@ func TestIntrospectionForInterface(t *testing.T) {
 									"description":  "Skipped when true.",
 									"defaultValue": nil,
 									"type": map[string]interface{}{
-										"name":          "bool",
+										"name":          "Boolean",
 										"kind":          "SCALAR",
 										"description":   "",
 										"fields":        []interface{}{},
