@@ -11,7 +11,6 @@ import (
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/schemabuilder"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
@@ -28,9 +27,9 @@ func init() {
 //RegisterWellKnownTypes registers the commonly used scalars
 func RegisterWellKnownTypes() {
 	RegisterDuration()
-	RegisterTimestamp()
+	// RegisterTimestamp()
 	RegisterEmpty()
-	RegisterStringStringMap()
+	// RegisterStringStringMap()
 }
 
 // RegisterStringStringMap registers the map[string]string as a scalar
@@ -91,7 +90,7 @@ func RegisterDuration() {
 
 // RegisterTimestamp registers timestamp as a scalar type
 func RegisterTimestamp() {
-	typ := reflect.TypeOf(timestamp.Timestamp{})
+	typ := reflect.TypeOf(schemabuilder.Timestamp{})
 	schemabuilder.RegisterScalar(typ, "Timestamp", func(value interface{}, target reflect.Value) error {
 		v, ok := value.(string)
 		if !ok {
@@ -109,14 +108,16 @@ func RegisterTimestamp() {
 	})
 }
 
+// RegisterInputFieldMask registers FieldMask as GraphQL Input
 func RegisterInputFieldMask() {
-	input := Schema.InputObject("FieldMask", field_mask.FieldMask{})
+	input := Schema.InputObject("FieldMaskInput", field_mask.FieldMask{})
 	input.FieldFunc("paths", func(target *field_mask.FieldMask, source []string) {
 		target.Paths = source
 	})
 
 }
 
+// RegisterPayloadFieldMask registers FieldMask as GraphQL Input
 func RegisterPayloadFieldMask() {
 	payload := Schema.Object("FieldMask", field_mask.FieldMask{})
 	payload.FieldFunc("paths", func(ctx context.Context, in *field_mask.FieldMask) []string {

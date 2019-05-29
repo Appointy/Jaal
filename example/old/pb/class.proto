@@ -5,7 +5,6 @@ package appointy.class.v1;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "schema/schema.proto";
-import "google/protobuf/field_mask.proto";
 
 option go_package="pb";
 
@@ -53,7 +52,6 @@ message CreateClassReq{
 
 message GetClassReq{
     string id = 1;
-    google.protobuf.FieldMask view_mask = 2;
 }
 
 enum ClassType{

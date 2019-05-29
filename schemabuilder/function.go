@@ -223,7 +223,7 @@ func (funcCtx *funcContext) argsTypeMap(argType graphql.Type) (map[string]graphq
 		}
 
 		for name, typ := range inputObject.InputFields {
-			args[name] = &graphql.NonNull{Type: typ}
+			args[name] = typ
 		}
 	}
 	return args, nil

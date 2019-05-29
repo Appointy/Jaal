@@ -7,7 +7,11 @@ import "google/protobuf/descriptor.proto";
 option go_package="go.appointy.com/jaal/schema";
 
 extend google.protobuf.MethodOptions {
-    MethodOptions schema = 9892748;
+    MethodOptions schema = 91111;
+}
+
+extend google.protobuf.MessageOptions{
+    bool skip = 91112;
 }
 
 message MethodOptions {

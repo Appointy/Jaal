@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/graphql"
 )
 
@@ -99,19 +100,21 @@ func getScalar(typ reflect.Type) (string, bool) {
 }
 
 var scalars = map[reflect.Type]string{
-	reflect.TypeOf(bool(false)):   "Boolean",
-	reflect.TypeOf(int(0)):        "Int",
-	reflect.TypeOf(int8(0)):       "Int",
-	reflect.TypeOf(int16(0)):      "Int",
-	reflect.TypeOf(int32(0)):      "Int",
-	reflect.TypeOf(int64(0)):      "Int",
-	reflect.TypeOf(uint(0)):       "Int",
-	reflect.TypeOf(uint8(0)):      "Int",
-	reflect.TypeOf(uint16(0)):     "Int",
-	reflect.TypeOf(uint32(0)):     "Int",
-	reflect.TypeOf(uint64(0)):     "Int",
-	reflect.TypeOf(float32(0)):    "Float",
-	reflect.TypeOf(float64(0)):    "Float",
-	reflect.TypeOf(string("")):    "String",
-	reflect.TypeOf(ID{Value: ""}): "ID",
+	reflect.TypeOf(bool(false)):                      "Boolean",
+	reflect.TypeOf(int(0)):                           "Int",
+	reflect.TypeOf(int8(0)):                          "Int",
+	reflect.TypeOf(int16(0)):                         "Int",
+	reflect.TypeOf(int32(0)):                         "Int",
+	reflect.TypeOf(int64(0)):                         "Int",
+	reflect.TypeOf(uint(0)):                          "Int",
+	reflect.TypeOf(uint8(0)):                         "Int",
+	reflect.TypeOf(uint16(0)):                        "Int",
+	reflect.TypeOf(uint32(0)):                        "Int",
+	reflect.TypeOf(uint64(0)):                        "Int",
+	reflect.TypeOf(float32(0)):                       "Float",
+	reflect.TypeOf(float64(0)):                       "Float",
+	reflect.TypeOf(string("")):                       "String",
+	reflect.TypeOf(ID{Value: ""}):                    "ID",
+	reflect.TypeOf(Map{Value: ""}):                   "Map",
+	reflect.TypeOf(Timestamp(timestamp.Timestamp{})): "Timestamp",
 }

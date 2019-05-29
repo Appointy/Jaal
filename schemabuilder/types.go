@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"time"
+
+	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 //Object - an Object represents a Go type and set of methods to be converted into an Object in a GraphQL schema.
@@ -230,4 +233,22 @@ func isScalarType(t reflect.Type) bool {
 // typesIdenticalOrScalarAliases checks whether a & b are same scalar
 func typesIdenticalOrScalarAliases(a, b reflect.Type) bool {
 	return a == b || (a.Kind() == b.Kind() && (a.Kind() != reflect.Struct) && (a.Kind() != reflect.Map) && isScalarType(a))
+}
+
+//Timestamp handles the time
+type Timestamp timestamp.Timestamp
+
+// MarshalJSON implements JSON Marshalling used to generate the output
+func (t Timestamp) MarshalJSON() ([]byte, error) {
+	return strconv.AppendQuote(nil, string(time.Unix(t.Seconds, int64(t.Nanos)).Format(time.RFC3339))), nil
+}
+
+//Map handles maps
+type Map struct {
+	Value string
+}
+
+// MarshalJSON implements JSON Marshalling used to generate the output
+func (m Map) MarshalJSON() ([]byte, error) {
+	return strconv.AppendQuote(nil, string(m.Value)), nil
 }

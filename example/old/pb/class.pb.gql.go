@@ -4,9 +4,12 @@ package pb
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 
-	duration "github.com/golang/protobuf/ptypes/duration"
-	timestamp "github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/golang/protobuf/ptypes/duration"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/schemabuilder"
 )
 
@@ -45,8 +48,14 @@ func registerClass(schema *schemabuilder.Schema) {
 	obj.FieldFunc("instructors", func(ctx context.Context, in *Class) []*ServiceProvider {
 		return in.Instructors
 	})
-	obj.FieldFunc("metadata", func(ctx context.Context, in *Class) map[string]string {
-		return in.Metadata
+	obj.FieldFunc("metadata", func(ctx context.Context, in *Class) (*schemabuilder.Map, error) {
+		data, err := json.Marshal(in.Metadata)
+		if err != nil {
+			return nil, err
+		}
+
+		encodedValue := base64.StdEncoding.EncodeToString(data)
+		return (*schemabuilder.Map)(&encodedValue), nil
 	})
 	obj.FieldFunc("parent", func(ctx context.Context, in *Class) string {
 		return in.Parent
@@ -67,8 +76,8 @@ func registerClass(schema *schemabuilder.Schema) {
 
 		//Using fragments
 	})
-	obj.FieldFunc("startDate", func(ctx context.Context, in *Class) *timestamp.Timestamp {
-		return in.StartDate
+	obj.FieldFunc("startDate", func(ctx context.Context, in *Class) *schemabuilder.Timestamp {
+		return (*schemabuilder.Timestamp)(in.StartDate)
 	})
 	obj.FieldFunc("duration", func(ctx context.Context, in *Class) *duration.Duration {
 		return in.Duration
@@ -109,9 +118,6 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 	inputObj.FieldFunc("area", func(target *Class, source *float32) {
 		target.Area = *source
 	})
-	inputObj.FieldFunc("area", func(target *Class, source *float32) {
-		target.Area = *source
-	})
 	inputObj.FieldFunc("strength", func(target *Class, source *int32) {
 		target.Strength = *source
 	})
@@ -121,8 +127,22 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 	inputObj.FieldFunc("instructors", func(target *Class, source []*ServiceProvider) {
 		target.Instructors = source
 	})
-	inputObj.FieldFunc("metadata", func(target *Class, source *map[string]string) {
-		target.Metadata = *source
+	inputObj.FieldFunc("metadata", func(target *Class, source *schemabuilder.Map) error {
+		v := string(*source)
+
+		decodedValue, err := base64.StdEncoding.DecodeString(v)
+		if err != nil {
+			return err
+		}
+
+		data := make(map[string]*Value)
+		if err := json.Unmarshal(decodedValue, &data); err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+
+		target.Metadata = data
+		return nil
 	})
 	inputObj.FieldFunc("parent", func(target *Class, source *string) {
 		target.Parent = *source
@@ -136,8 +156,8 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 	inputObj.FieldFunc("duration", func(target *Class, source *duration.Duration) {
 		target.Duration = source
 	})
-	inputObj.FieldFunc("startDate", func(target *Class, source *timestamp.Timestamp) {
-		target.StartDate = source
+	inputObj.FieldFunc("startDate", func(target *Class, source *schemabuilder.Timestamp) {
+		target.StartDate = (*timestamp.Timestamp)(source)
 	})
 
 	inputObj = schema.InputObject("ServiceProviderInput", ServiceProvider{})

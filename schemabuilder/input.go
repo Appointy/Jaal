@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/graphql"
 )
 
@@ -302,7 +304,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asBool, ok := value.(bool)
 			if !ok {
-				return errors.New("not a bool")
+				asBool = false
 			}
 			dest.Set(reflect.ValueOf(asBool).Convert(dest.Type()))
 			return nil
@@ -312,7 +314,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(asFloat).Convert(dest.Type()))
 			return nil
@@ -322,7 +324,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(float32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -332,7 +334,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(int64(asFloat)).Convert(dest.Type()))
 			return nil
@@ -342,7 +344,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(int32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -352,7 +354,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(int16(asFloat)).Convert(dest.Type()))
 			return nil
@@ -362,7 +364,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(int8(asFloat)).Convert(dest.Type()))
 			return nil
@@ -372,7 +374,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(int64(asFloat)).Convert(dest.Type()))
 			return nil
@@ -382,7 +384,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(uint32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -392,7 +394,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(uint16(asFloat)).Convert(dest.Type()))
 			return nil
@@ -402,7 +404,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				return errors.New("not a number")
+				asFloat = 0.0
 			}
 			dest.Set(reflect.ValueOf(uint8(asFloat)).Convert(dest.Type()))
 			return nil
@@ -412,7 +414,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asString, ok := value.(string)
 			if !ok {
-				return errors.New("not a string")
+				asString = ""
 			}
 			dest.Set(reflect.ValueOf(asString).Convert(dest.Type()))
 			return nil
@@ -422,27 +424,39 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				return errors.New("not a string type")
+				v = ""
 			}
 
 			dest.Field(0).SetString(v)
 			return nil
 		},
 	},
+	reflect.TypeOf(Map{Value: ""}): {
+		FromJSON: func(value interface{}, dest reflect.Value) error {
+			v, ok := value.(string)
+			if !ok {
+				v = ""
+			}
+
+			dest.Field(0).SetString(v)
+			return nil
+		},
+	},
+	reflect.TypeOf(Timestamp(timestamp.Timestamp{})): {
+		FromJSON: func(value interface{}, dest reflect.Value) error {
+			v, ok := value.(string)
+			if !ok {
+				return errors.New("invalid type expected a string")
+			}
+
+			t, err := time.Parse(time.RFC3339, v)
+			if err != nil {
+				return err
+			}
+
+			dest.Field(0).SetInt(int64(t.Second()))
+			dest.Field(1).SetInt(int64(t.Nanosecond()))
+			return nil
+		},
+	},
 }
-
-//TODO:
-/*
-Add GraphQL scalars : ID, String, Int, Float, Boolean, Enum
-Add input objects: Register input objects like Object registration - like json or add each field
-Interface Support :
-Directives support :
-
-
-
-=============================================
-Protocol Buffers to GraphQL Schema generation
-protoc-gen-start
-tagging
-
-*/
