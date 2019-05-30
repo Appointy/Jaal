@@ -283,10 +283,6 @@ func TestIntrospectionForInterface(t *testing.T) {
 									type{
 										name
 										kind
-										ofType{
-											name
-											kind
-										}
 									}
 								}
 								type{
@@ -314,12 +310,8 @@ func TestIntrospectionForInterface(t *testing.T) {
 									map[string]interface{}{
 										"name": "in",
 										"type": map[string]interface{}{
-											"kind": "NON_NULL",
-											"name": "",
-											"ofType": map[string]interface{}{
-												"name": "NodeInput",
-												"kind": "INPUT_OBJECT",
-											},
+											"kind": "INPUT_OBJECT",
+											"name": "NodeInput",
 										},
 									},
 								},
@@ -334,12 +326,8 @@ func TestIntrospectionForInterface(t *testing.T) {
 									map[string]interface{}{
 										"name": "in",
 										"type": map[string]interface{}{
-											"kind": "NON_NULL",
-											"name": "",
-											"ofType": map[string]interface{}{
-												"name": "NodeInput",
-												"kind": "INPUT_OBJECT",
-											},
+											"kind": "INPUT_OBJECT",
+											"name": "NodeInput",
 										},
 									},
 								},
