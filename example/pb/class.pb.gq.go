@@ -2,8 +2,8 @@
 package pb
 
 import "github.com/golang/protobuf/ptypes/duration"
-import "github.com/golang/protobuf/ptypes/timestamp"
 import "google.golang.org/genproto/protobuf/field_mask"
+import "github.com/golang/protobuf/ptypes/timestamp"
 import "context"
 import "encoding/json"
 import "encoding/base64"
