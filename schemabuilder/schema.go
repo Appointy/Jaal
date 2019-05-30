@@ -103,6 +103,16 @@ func (s *Schema) Object(name string, typ interface{}) *Object {
 	return object
 }
 
+// GetObject gets a registered object. It is used to create linkings between different objects
+func (s *Schema) GetObject(name string, typ interface{}) (*Object, error) {
+	object, ok := s.objects[name]
+	if ok && reflect.TypeOf(object.Type) == reflect.TypeOf(typ) {
+		return object, nil
+	}
+
+	return nil, fmt.Errorf("%v of type %v is not a registered Object on schema", name, typ)
+}
+
 // InputObject registers a struct as inout object which can be passed as an argument to a query or mutation
 // We'll read through the fields of the struct and create argument parsers to fill the data from graphQL JSON input
 func (s *Schema) InputObject(name string, typ interface{}) *InputObject {
