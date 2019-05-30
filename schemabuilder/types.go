@@ -250,5 +250,5 @@ type Map struct {
 
 // MarshalJSON implements JSON Marshalling used to generate the output
 func (m Map) MarshalJSON() ([]byte, error) {
-	return strconv.AppendQuote(nil, string(m.Value)), nil
+	return []byte(m.Value), nil
 }
