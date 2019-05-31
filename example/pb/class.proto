@@ -25,6 +25,7 @@ service Classes {
 }
 
 message Class{
+
     string id = 1;
     float area = 2;
     int32 strength = 3;

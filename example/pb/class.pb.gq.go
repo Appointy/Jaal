@@ -298,11 +298,14 @@ func RegisterClassesOperations(schema *schemabuilder.Schema, client ClassesClien
 		Id       schemabuilder.ID
 		ViewMask *field_mask.FieldMask
 	}) (*Class, error) {
-		return client.GetClass(ctx, &GetClassReq{
+
+		request := &GetClassReq{
 
 			Id:       args.Id.Value,
 			ViewMask: args.ViewMask,
-		})
+		}
+
+		return client.GetClass(ctx, request)
 	})
 
 	schema.Mutation().FieldFunc("createClass", func(ctx context.Context, args struct {
@@ -311,9 +314,9 @@ func RegisterClassesOperations(schema *schemabuilder.Schema, client ClassesClien
 		request := &CreateClassReq{
 
 			Parent: args.Input.Parent,
-
-			Class: args.Input.Class,
+			Class:  args.Input.Class,
 		}
+
 		response, err := client.CreateClass(ctx, request)
 		return &CreateClassPayload{
 			Payload:          response,
