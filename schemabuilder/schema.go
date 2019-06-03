@@ -207,3 +207,75 @@ func (s *Schema) MustBuild() *graphql.Schema {
 	}
 	return built
 }
+
+// Clone creates a deep copy of schema and panics if it fails
+func (s *Schema) Clone() *Schema {
+	copy := Schema{
+		objects:      make(map[string]*Object, len(s.objects)),
+		inputObjects: make(map[string]*InputObject,len(s.inputObjects)),
+		enumTypes:    make(map[reflect.Type]*EnumMapping,len(s.enumTypes)),
+	}
+
+	for key, value := range s.objects{
+		copy.objects[key]=copyObject(value)
+	}
+
+	for key,value := range s.inputObjects{
+		copy.inputObjects[key]=copyInputObject(value)
+	}
+
+	for key,value := range s.enumTypes{
+		copy.enumTypes[key]=copyEnumMappings(value)
+	}
+
+	return &copy
+}
+
+func copyObject(object *Object) *Object {
+	copy := &Object{
+		Name:        object.Name,
+		Description: object.Description,
+		Type:        object.Type,
+		Methods:     make(Methods, len(object.Methods)),
+	}
+
+	for name, m := range object.Methods {
+		copy.Methods[name] = &method{
+			MarkedNonNullable: m.MarkedNonNullable,
+			Fn:                m.Fn,
+		}
+	}
+
+	return copy
+}
+
+func copyInputObject(input *InputObject) *InputObject {
+	copy := &InputObject{
+		Name:   input.Name,
+		Type:   input.Type,
+		Fields: make(map[string]interface{}),
+	}
+
+	for name, field := range input.Fields {
+		copy.Fields[name] = field
+	}
+
+	return copy
+}
+
+func copyEnumMappings(mapping *EnumMapping) *EnumMapping  {
+	enum := &EnumMapping{
+		Map: make(map[string]interface{},len(mapping.Map)),
+		ReverseMap:make( map[interface{}]string,len(mapping.ReverseMap)),
+	}
+
+	for key,value := range mapping.Map{
+		enum.Map[key] = value
+	}
+
+	for key,value := range mapping.ReverseMap{
+		enum.ReverseMap[key]=value
+	}
+
+	return enum
+}
