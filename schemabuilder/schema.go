@@ -142,9 +142,17 @@ func (s *Schema) Query() *Object {
 type mutation struct{}
 
 // Mutation returns an Object struct that we can use to register all the top level
-// graphql mutations functions we'd like to expose.
+// graphql mutation functions we'd like to expose.
 func (s *Schema) Mutation() *Object {
 	return s.Object("Mutation", mutation{})
+}
+
+type subscription struct{}
+
+// Subscription returns an Object struct that we can use to register all the top level
+// graphql subscription functions we'd like to expose.
+func (s *Schema) Subscription() *Object {
+	return s.Object("Mutation", subscription{})
 }
 
 // Build takes the schema we have built on our Query and Mutation starting points and builds a full graphql.Schema
@@ -212,20 +220,20 @@ func (s *Schema) MustBuild() *graphql.Schema {
 func (s *Schema) Clone() *Schema {
 	copy := Schema{
 		objects:      make(map[string]*Object, len(s.objects)),
-		inputObjects: make(map[string]*InputObject,len(s.inputObjects)),
-		enumTypes:    make(map[reflect.Type]*EnumMapping,len(s.enumTypes)),
+		inputObjects: make(map[string]*InputObject, len(s.inputObjects)),
+		enumTypes:    make(map[reflect.Type]*EnumMapping, len(s.enumTypes)),
 	}
 
-	for key, value := range s.objects{
-		copy.objects[key]=copyObject(value)
+	for key, value := range s.objects {
+		copy.objects[key] = copyObject(value)
 	}
 
-	for key,value := range s.inputObjects{
-		copy.inputObjects[key]=copyInputObject(value)
+	for key, value := range s.inputObjects {
+		copy.inputObjects[key] = copyInputObject(value)
 	}
 
-	for key,value := range s.enumTypes{
-		copy.enumTypes[key]=copyEnumMappings(value)
+	for key, value := range s.enumTypes {
+		copy.enumTypes[key] = copyEnumMappings(value)
 	}
 
 	return &copy
@@ -263,18 +271,18 @@ func copyInputObject(input *InputObject) *InputObject {
 	return copy
 }
 
-func copyEnumMappings(mapping *EnumMapping) *EnumMapping  {
+func copyEnumMappings(mapping *EnumMapping) *EnumMapping {
 	enum := &EnumMapping{
-		Map: make(map[string]interface{},len(mapping.Map)),
-		ReverseMap:make( map[interface{}]string,len(mapping.ReverseMap)),
+		Map:        make(map[string]interface{}, len(mapping.Map)),
+		ReverseMap: make(map[interface{}]string, len(mapping.ReverseMap)),
 	}
 
-	for key,value := range mapping.Map{
+	for key, value := range mapping.Map {
 		enum.Map[key] = value
 	}
 
-	for key,value := range mapping.ReverseMap{
-		enum.ReverseMap[key]=value
+	for key, value := range mapping.ReverseMap {
+		enum.ReverseMap[key] = value
 	}
 
 	return enum
