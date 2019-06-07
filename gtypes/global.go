@@ -11,6 +11,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/iancoleman/strcase"
 	"go.appointy.com/jaal/schemabuilder"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
@@ -123,4 +124,15 @@ func RegisterPayloadFieldMask() {
 	payload.FieldFunc("paths", func(ctx context.Context, in *field_mask.FieldMask) []string {
 		return in.Paths
 	})
+}
+
+// ModifyFieldMask modifies the paths of recieved field mask to snake case
+func ModifyFieldMask(mask *field_mask.FieldMask) *field_mask.FieldMask {
+	modified := &field_mask.FieldMask{Paths: []string{}}
+
+	for _, path := range mask.GetPaths() {
+		modified.Paths = append(modified.Paths, strcase.ToSnake(path))
+	}
+
+	return modified
 }

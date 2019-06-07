@@ -55,7 +55,7 @@ func registerClass(schema *schemabuilder.Schema) {
 		}
 
 		encodedValue := base64.StdEncoding.EncodeToString(data)
-		return (*schemabuilder.Map)(&encodedValue), nil
+		return &schemabuilder.Map{Value : encodedValue}, nil
 	})
 	obj.FieldFunc("parent", func(ctx context.Context, in *Class) string {
 		return in.Parent
@@ -128,7 +128,7 @@ func registerCreateClassReq(schema *schemabuilder.Schema) {
 		target.Instructors = source
 	})
 	inputObj.FieldFunc("metadata", func(target *Class, source *schemabuilder.Map) error {
-		v := string(*source)
+		v := source.Value
 
 		decodedValue, err := base64.StdEncoding.DecodeString(v)
 		if err != nil {
