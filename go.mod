@@ -4,6 +4,7 @@ require (
 	github.com/appointy/idgen v0.0.0-20190227121039-a884768ebb9d
 	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.3.1
+	github.com/gorilla/websocket v1.4.0
 	github.com/graphql-go/graphql v0.7.8
 	github.com/jinzhu/copier v0.0.0-20180308034124-7e38e58719c3
 	github.com/kylelemons/godebug v1.1.0

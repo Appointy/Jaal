@@ -152,8 +152,9 @@ type Field struct {
 
 //Schema used to validate and resolve the queries
 type Schema struct {
-	Query    Type
-	Mutation Type
+	Query        Type
+	Mutation     Type
+	Subscription Type
 }
 
 // SelectionSet represents a core GraphQL query
