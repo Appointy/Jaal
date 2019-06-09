@@ -23,19 +23,18 @@ type subTypeCacheManager struct {
 	Lock         *sync.Mutex
 }
 
+// SubStreamManager manages all the client streams and the source event streams for each subscription type
 var SubStreamManager subStreamManager
 
+// SubTypeCacheManager stores the source event for each subscription type to execute at clients
 var SubTypeCacheManager subTypeCacheManager
 
 func init() {
-	// SubStreamManager manages all the client streams and the source event streams for each subscription type
 	SubStreamManager = subStreamManager{
 		make(map[string]chan interface{}),
 		make(map[string]*typeNotif),
 		&sync.RWMutex{},
 	}
-
-	// SubTypeCacheManager stores the source event for each subscription type to execute at clients
 	SubTypeCacheManager = subTypeCacheManager{
 		make(map[string]interface{}),
 		make(map[string]int64),
@@ -99,4 +98,10 @@ func sourceSubTypeTrigger(subType string) {
 			SubTypeCacheManager.Lock.Unlock()
 		}
 	}
+}
+
+func deleteEntries(id string, subType string) {
+	SubStreamManager.Lock.Lock()
+	delete(SubStreamManager.ServerTypeNotifs[subType].Clients, id)
+	SubStreamManager.Lock.Unlock()
 }

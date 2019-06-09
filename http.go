@@ -233,14 +233,15 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			conn.WriteJSON(getResponse(output, nil))
 		case msg := <-extError:
+			deleteEntries(id, subType)
 			if msg == 0 {
 				fmt.Printf("Client %v unsubscribed successfully\n", id)
 				return
-			} else if msg == 1 {
-				fmt.Printf("Client %v disconnected\n", id)
-				return
 			}
+			fmt.Printf("Client %v disconnected\n", id)
+			return
 		case <-intError:
+			deleteEntries(id, subType)
 			fmt.Println("Client disconnected. Internal Error")
 			return
 		}
