@@ -71,7 +71,7 @@ func (l *List) String() string {
 	return fmt.Sprintf("[%s]", l.Type)
 }
 
-//InputObject defines the object in argument of a query or mutation
+//InputObject defines the object in argument of a query, mutation or subscription
 type InputObject struct {
 	Name        string
 	InputFields map[string]Type

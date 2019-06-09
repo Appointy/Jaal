@@ -20,3 +20,8 @@ At Build Time:
 
 
 SOURCE STREAM ----------> MAPPER ------------> FILTER --------------> MANAGER -----------------> CLIENT
+
+Current Implementation
+
+    - Each subscription in a client has a different entry in the SubscriptionManager
+    - Unsubscription is through sending a message on the websocket

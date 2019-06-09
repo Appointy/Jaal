@@ -36,7 +36,7 @@ func (sb *schemaBuilder) buildStruct(typ reflect.Type) error {
 		methods = object.Methods
 		objectKey = object.key
 	} else {
-		if typ.Name() != "query" && typ.Name() != "mutation" {
+		if typ.Name() != "query" && typ.Name() != "mutation" && typ.Name() != "subscription" {
 			return fmt.Errorf("%s not registered as object", typ.Name())
 		}
 	}

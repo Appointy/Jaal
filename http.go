@@ -54,13 +54,7 @@ type httpResponse struct {
 	Errors []string    `json:"errors"`
 }
 
-type TestReq struct {
-	Name string `json:"name"`
-}
-
-type TestRes struct {
-	Message string `json:"message"`
-}
+type endMessage struct{}
 
 var upgrader = websocket.Upgrader{}
 
@@ -110,6 +104,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if query.Kind == "mutation" {
 		schema = h.schema.Mutation
 	}
+
 	if err := graphql.ValidateQuery(r.Context(), schema, query.SelectionSet); err != nil {
 		writeResponse(nil, err)
 		return
@@ -144,9 +139,12 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return responseJSON
 	}
 
+	fmt.Println("started")
+
 	if r.Method != "POST" {
 		res := getResponse(nil, errors.New("request must be a POST"))
 		w.Write(res)
+		fmt.Println("not post")
 		return
 	}
 
@@ -170,6 +168,10 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	subType := query.SelectionSet.Selections[0].Name
+
+	fmt.Println("parsed")
+
 	schema := h.schema.Subscription
 
 	if err := graphql.ValidateQuery(r.Context(), schema, query.SelectionSet); err != nil {
@@ -178,35 +180,69 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("validated")
+
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		res := getResponse(nil, errors.New("could not establish websokcet connection"))
 		w.Write(res)
 		return
 	}
+	defer conn.Close()
 
-	// Assign each client a uuid
 	id := idgen.New("usr")
 
-	// Write to the global sub info
-	storeSub.lock.Lock()
-	storeSub.conn[id] = conn
-	storeSub.query[id] = query
-	storeSub.lock.Unlock()
+	// TODO : Add support for multiple fields in the selection set of subscription
+	usrChannel := make(chan interface{})
+	SubStreamManager.Lock.RLock()
+	SubStreamManager.ServerTypeNotifs[subType].ServerTypeNotif <- usrChannel
+	usrChannel <- id
+	SubStreamManager.Lock.RUnlock()
 
+	// External Error: Client side
+	var extError = make(chan int)
+	// Internal Error: Internal working
+	var intError = make(chan int)
+
+	// Check for unsubscription
+	go func() {
+		// TODO : Check if ReadMessage() works otherwise ReadJSON()
+		_, _, err := conn.ReadMessage()
+		if err != nil {
+			extError <- 1
+			return
+		}
+		extError <- 0
+		return
+	}()
+
+	// Listening on usrChannel for any source event of subType
 	for {
-		// TODO : Send response on source event fire
+		select {
+		case <-usrChannel:
+			output, err := h.executor.Execute(r.Context(), schema, nil, query)
+			if err != nil {
+				res := getResponse(nil, err)
+				conn.WriteJSON(res)
+				intError <- 1
+				fmt.Println(err)
+			}
+			SubTypeCacheManager.Lock.Lock()
+			SubTypeCacheManager.CacheRead[subType]++
+			SubTypeCacheManager.Lock.Unlock()
 
-		// output, err := h.executor.Execute(r.Context(), schema, nil, query)
-		// if err != nil {
-		// 	res := getResponse(nil, err)
-		// 	conn.WriteJSON(res)
-		// 	return
-		// }
-		// conn.WriteJSON(getResponse(output, nil))
-
-		var req TestReq
-		conn.ReadJSON(&req)
-		conn.WriteJSON(TestRes{Message: fmt.Sprintf("Hey %s", req.Name)})
+			conn.WriteJSON(getResponse(output, nil))
+		case msg := <-extError:
+			if msg == 0 {
+				fmt.Printf("Client %v unsubscribed successfully\n", id)
+				return
+			} else if msg == 1 {
+				fmt.Printf("Client %v disconnected\n", id)
+				return
+			}
+		case <-intError:
+			fmt.Println("Client disconnected. Internal Error")
+			return
+		}
 	}
 }
