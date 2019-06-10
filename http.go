@@ -228,7 +228,7 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				fmt.Println(err)
 				return
 			}
-			conn.WriteJSON(getResponse(output, nil))
+			conn.WriteMessage(1, getResponse(output, nil))
 		}
 	}
 	fmt.Println("End")
