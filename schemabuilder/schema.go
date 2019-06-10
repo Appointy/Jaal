@@ -147,12 +147,14 @@ func (s *Schema) Mutation() *Object {
 	return s.Object("Mutation", mutation{})
 }
 
-type subscription struct{}
+type Subscription struct {
+	Source interface{}
+}
 
 // Subscription returns an Object struct that we can use to register all the top level
 // graphql subscription functions we'd like to expose.
 func (s *Schema) Subscription() *Object {
-	return s.Object("Subscription", subscription{})
+	return s.Object("Subscription", Subscription{})
 }
 
 // Build takes the schema we have built on our Query, Mutation and Subscription starting points and builds a full graphql.Schema
@@ -201,7 +203,7 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 	if err != nil {
 		return nil, err
 	}
-	subscriptionTyp, err := sb.getType(reflect.TypeOf(&subscription{}))
+	subscriptionTyp, err := sb.getType(reflect.TypeOf(&Subscription{}))
 	if err != nil {
 		return nil, err
 	}

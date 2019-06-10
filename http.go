@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/appointy/idgen"
 	"github.com/gorilla/websocket"
 	"go.appointy.com/jaal/graphql"
+	"go.appointy.com/jaal/schemabuilder"
 )
 
 // HTTPHandler implements the handler required for executing the graphql queries and mutations
@@ -109,7 +111,6 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeResponse(nil, err)
 		return
 	}
-
 	output, err := h.executor.Execute(r.Context(), schema, nil, query)
 	if err != nil {
 		writeResponse(nil, err)
@@ -133,29 +134,26 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return nil
 		}
-		if w.Header().Get("Content-Type") == "" {
-			w.Header().Set("Content-Type", "application/json")
-		}
 		return responseJSON
 	}
 
 	fmt.Println("started")
 
-	if r.Method != "POST" {
-		res := getResponse(nil, errors.New("request must be a POST"))
-		w.Write(res)
-		fmt.Println("not post")
-		return
-	}
+	// if r.Method != "POST" {
+	// 	res := getResponse(nil, errors.New("request must be a POST"))
+	// 	w.Write(res)
+	// 	fmt.Println("not post")
+	// 	return
+	// }
 
-	if r.Body == nil {
+	if r.Header.Get("body") == "" {
 		res := getResponse(nil, errors.New("request must include a query"))
 		w.Write(res)
 		return
 	}
 
 	var params httpPostBody
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+	if err := json.NewDecoder(strings.NewReader(r.Header.Get("body"))).Decode(&params); err != nil {
 		res := getResponse(nil, err)
 		w.Write(res)
 		return
@@ -170,7 +168,7 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	subType := query.SelectionSet.Selections[0].Name
 
-	fmt.Println("parsed")
+	fmt.Println("parsed, subType:", subType)
 
 	schema := h.schema.Subscription
 
@@ -185,24 +183,23 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		res := getResponse(nil, errors.New("could not establish websokcet connection"))
+		fmt.Println(err)
 		w.Write(res)
 		return
 	}
 	defer conn.Close()
 
 	id := idgen.New("usr")
-
+	fmt.Println(id)
 	// TODO : Add support for multiple fields in the selection set of subscription
 	usrChannel := make(chan interface{})
 	SubStreamManager.Lock.RLock()
 	SubStreamManager.ServerTypeNotifs[subType].ServerTypeNotif <- usrChannel
-	usrChannel <- id
 	SubStreamManager.Lock.RUnlock()
+	usrChannel <- id
 
 	// External Error: Client side
 	var extError = make(chan int)
-	// Internal Error: Internal working
-	var intError = make(chan int)
 
 	// Check for unsubscription
 	go func() {
@@ -212,38 +209,27 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			extError <- 1
 			return
 		}
-		extError <- 0
-		return
 	}()
 
 	// Listening on usrChannel for any source event of subType
-	for {
+	for msg := range usrChannel {
+		fmt.Println("Received from server")
 		select {
-		case <-usrChannel:
-			output, err := h.executor.Execute(r.Context(), schema, nil, query)
+		case <-extError:
+			deleteEntries(id, subType)
+			fmt.Printf("Client %v disconnected\n", id)
+			return
+		default:
+			output, err := h.executor.Execute(r.Context(), schema, &schemabuilder.Subscription{msg}, query)
 			if err != nil {
 				res := getResponse(nil, err)
 				conn.WriteJSON(res)
-				intError <- 1
+				deleteEntries(id, subType)
 				fmt.Println(err)
-			}
-			SubTypeCacheManager.Lock.Lock()
-			SubTypeCacheManager.CacheRead[subType]++
-			SubTypeCacheManager.Lock.Unlock()
-
-			conn.WriteJSON(getResponse(output, nil))
-		case msg := <-extError:
-			deleteEntries(id, subType)
-			if msg == 0 {
-				fmt.Printf("Client %v unsubscribed successfully\n", id)
 				return
 			}
-			fmt.Printf("Client %v disconnected\n", id)
-			return
-		case <-intError:
-			deleteEntries(id, subType)
-			fmt.Println("Client disconnected. Internal Error")
-			return
+			conn.WriteJSON(getResponse(output, nil))
 		}
 	}
+	fmt.Println("End")
 }
