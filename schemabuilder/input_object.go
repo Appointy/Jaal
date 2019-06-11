@@ -121,6 +121,10 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 		return sb.getInputFieldParser(typ)
 	}
 
+	if typ.Kind() == reflect.Slice {
+		return sb.generateSliceParser(typ)
+	}
+
 	if _, ok := sb.inputObjects[typ]; !ok {
 		return nil, nil, fmt.Errorf("%s not registered as input object", typ.Name())
 	}
