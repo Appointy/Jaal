@@ -1,19 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/gorilla/websocket"
 )
-
-type httpResponse struct {
-	Data   interface{} `json:"data"`
-	Errors []string    `json:"errors"`
-}
 
 type httpPostBody struct {
 	Query     string                 `json:"query"`
@@ -21,8 +18,14 @@ type httpPostBody struct {
 }
 
 func main() {
+	r := bufio.NewReader(os.Stdin)
+	fmt.Println("Enter the name you want to subscribe to - ")
+	name, err := r.ReadString('\n')
+	if err != nil {
+		fmt.Println("couldn't process user input")
+	}
 	queryString := `subscription{
-			channelStream(in: {name: "Table Saheb"}) {
+			channelStream(in: {name: "` + name[0:len(name)-1] + `"}) {
 				id
 				email
 				name
@@ -48,12 +51,6 @@ func main() {
 	defer c.Close()
 
 	for {
-		// var res httpResponse
-		// if err := c.ReadJSON(&res); err != nil {
-		// 	fmt.Println("Server disconnected: ", err)
-		// 	return
-		// }
-		// fmt.Println(res)
 		_, msg, err := c.ReadMessage()
 		if err != nil {
 			fmt.Println("Server disconnected:", err)

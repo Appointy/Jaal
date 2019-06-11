@@ -211,25 +211,28 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	// For an extra loop so that the server doesn't block
+	disconnect := false
 	// Listening on usrChannel for any source event of subType
 	for msg := range usrChannel {
+		if disconnect {
+			break
+		}
 		fmt.Println("Received from server")
 		select {
 		case <-extError:
-			deleteEntries(id, subType)
-			fmt.Printf("Client %v disconnected\n", id)
-			return
+			disconnect = true
 		default:
 			output, err := h.executor.Execute(r.Context(), schema, &schemabuilder.Subscription{msg}, query)
 			if err != nil {
 				res := getResponse(nil, err)
 				conn.WriteJSON(res)
-				deleteEntries(id, subType)
+				disconnect = true
 				fmt.Println(err)
-				return
 			}
 			conn.WriteMessage(1, getResponse(output, nil))
 		}
 	}
-	fmt.Println("End")
+	deleteEntries(id, subType)
+	fmt.Printf("Client %v disconnected\n", id)
 }

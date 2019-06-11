@@ -177,7 +177,20 @@ func main() {
 				"Table",
 				"Saheb",
 			}
-			fmt.Println("Sent into stream")
+			fmt.Println("Sent into stream - 1")
+			jaal.SubStreamManager.Lock.RUnlock()
+		}
+	}()
+	go func() {
+		for {
+			time.Sleep(2 * time.Second)
+			jaal.SubStreamManager.Lock.RLock()
+			jaal.SubStreamManager.SubTypeStreams["channelStream"] <- sourceChannel{
+				idgen.New("source"),
+				"Uptown",
+				"Funk",
+			}
+			fmt.Println("Sent into stream - 2")
 			jaal.SubStreamManager.Lock.RUnlock()
 		}
 	}()
