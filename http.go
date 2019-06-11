@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/appointy/idgen"
@@ -198,17 +199,14 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	SubStreamManager.Lock.RUnlock()
 	usrChannel <- id
 
-	// External Error: Client side
-	var extError = make(chan int)
+	// Client side unsubscribe/disconnect signal
+	var ext = make(chan int)
 
 	// Check for unsubscription
 	go func() {
-		// TODO : Check if ReadMessage() works otherwise ReadJSON()
-		_, _, err := conn.ReadMessage()
-		if err != nil {
-			extError <- 1
-			return
-		}
+		_, _, _ = conn.ReadMessage()
+		ext <- 1
+		return
 	}()
 
 	// For an extra loop so that the server doesn't block
@@ -220,7 +218,7 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		fmt.Println("Received from server")
 		select {
-		case <-extError:
+		case <-ext:
 			disconnect = true
 		default:
 			output, err := h.executor.Execute(r.Context(), schema, &schemabuilder.Subscription{msg}, query)
@@ -230,7 +228,10 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				disconnect = true
 				fmt.Println(err)
 			}
-			conn.WriteMessage(1, getResponse(output, nil))
+			if reflect.TypeOf(output.(map[string]interface{})[subType]) != nil {
+				conn.WriteMessage(1, getResponse(output, nil))
+			}
+
 		}
 	}
 	deleteEntries(id, subType)

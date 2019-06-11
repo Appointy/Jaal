@@ -51,15 +51,15 @@ func (s *server) registerQuery(schema *schemabuilder.Schema) {
 
 	obj.FieldFunc("channel", func(ctx context.Context, args struct {
 		In getChannelReq
-	}) channel {
+	}) *channel {
 		fmt.Println("dddddd")
 		for _, ch := range s.channels {
 			if ch.Id == args.In.Id {
-				return ch
+				return &ch
 			}
 		}
 
-		return channel{}
+		return nil
 	})
 }
 
@@ -68,7 +68,7 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 
 	obj.FieldFunc("createChannel", func(ctx context.Context, args struct {
 		Ouch createChannelReq
-	}) channel {
+	}) *channel {
 
 		ch := channel{
 			Name:  args.Ouch.Name,
@@ -77,7 +77,7 @@ func (s *server) registerMutation(schema *schemabuilder.Schema) {
 		}
 		s.channels = append(s.channels, ch)
 		fmt.Println(s)
-		return ch
+		return &ch
 	})
 }
 
@@ -86,16 +86,16 @@ func (s *server) registerSubscription(schema *schemabuilder.Schema) {
 
 	obj.FieldFunc("channelStream", func(source *schemabuilder.Subscription, args struct {
 		In channelStreamReq
-	}) channel {
+	}) *channel {
 		temp := source.Source.(sourceChannel)
 		if args.In.Name == (temp.FirstName + " " + temp.LastName) {
-			return channel{
+			return &channel{
 				Id:    temp.Id,
 				Name:  temp.FirstName + " " + temp.LastName,
 				Email: temp.FirstName + "@appointy.com",
 			}
 		}
-		return channel{}
+		return nil
 	})
 }
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -51,6 +52,10 @@ func main() {
 	defer c.Close()
 
 	for {
+		if rand.Intn(100) < 40 {
+			c.WriteMessage(1, []byte(""))
+			continue
+		}
 		_, msg, err := c.ReadMessage()
 		if err != nil {
 			fmt.Println("Server disconnected:", err)
