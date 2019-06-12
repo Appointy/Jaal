@@ -454,7 +454,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 				return err
 			}
 
-			dest.Field(0).SetInt(int64(t.Second()))
+			dest.Field(0).SetInt(int64(t.Unix()))
 			dest.Field(1).SetInt(int64(t.Nanosecond()))
 			return nil
 		},
