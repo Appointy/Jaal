@@ -1,16 +1,23 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
+	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/pstest"
 	"github.com/appointy/idgen"
 	"go.appointy.com/jaal"
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/introspection"
 	"go.appointy.com/jaal/schemabuilder"
 	"golang.org/x/net/context"
+	"google.golang.org/api/option"
+	"google.golang.org/grpc"
 )
 
 type channel struct {
@@ -39,10 +46,17 @@ type server struct {
 	channels []channel
 }
 
+// Struct for channelStream
 type sourceChannel struct {
 	Id        string
 	FirstName string
 	LastName  string
+}
+
+// Struct for SourceEvent
+type SourceEvent struct {
+	Payload []interface{}
+	Errors  []error
 }
 
 // registerQuery registers the root query type.
@@ -138,8 +152,17 @@ func (s *server) schema() *graphql.Schema {
 	fmt.Println("objects")
 	s.registerQuery(builder)
 	s.registerMutation(builder)
-	jaal.RegisterSubType("channelStream")
-	// jaal.RegisterSubType
+	if err := jaal.RegisterSubType("channelStream", func(source *pubsub.Message) (sourceChannel, error) {
+		var temp sourceChannel
+		if err := json.Unmarshal(source.Data, &temp); err != nil {
+			return sourceChannel{}, err
+		}
+		return temp, nil
+	}); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	s.registerSubscription(builder)
 
 	return builder.MustBuild()
@@ -166,33 +189,90 @@ func main() {
 	http.Handle("/graphql", jaal.HTTPHandler(schema))
 	http.Handle("/graphql/sub", jaal.HTTPSubHandler(schema))
 	fmt.Println("Running")
+
+	ctx := context.Background()
+	s := pstest.NewServer()
+	defer s.Close()
+	conn, err := grpc.Dial(s.Addr, grpc.WithInsecure())
+	if err != nil {
+		fmt.Println("failed to create server")
+	}
+	defer conn.Close()
+	cli, err := pubsub.NewClient(ctx, "some-project", option.WithGRPCConn(conn))
+	if err != nil {
+		fmt.Println("failed to create client:", err)
+		return
+	}
+	top, err := cli.CreateTopic(ctx, "topName")
+	if err != nil {
+		fmt.Println("failed to create topic:", err)
+		return
+	}
+	sub, err := cli.CreateSubscription(ctx, "subName", pubsub.SubscriptionConfig{
+		Topic:       top,
+		AckDeadline: 10 * time.Second,
+	})
+	if err != nil {
+		fmt.Println("failed to create subscription:", err)
+		return
+	}
 	go jaal.AddClientDaemon("channelStream")
 	go jaal.SourceSubTypeTrigger("channelStream")
+	go jaal.SourceEventListener(ctx, sub)
+
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
-			jaal.SubStreamManager.Lock.RLock()
-			jaal.SubStreamManager.SubTypeStreams["channelStream"] <- sourceChannel{
-				idgen.New("source"),
-				"Table",
-				"Saheb",
+			var temp sourceChannel
+			if rand.Intn(10) < 5 {
+				temp = sourceChannel{
+					Id:        idgen.New("src"),
+					FirstName: "Serial",
+					LastName:  "Killer",
+				}
+			} else {
+				temp = sourceChannel{
+					Id:        idgen.New("src"),
+					FirstName: "Dirty",
+					LastName:  "Shoe",
+				}
 			}
-			fmt.Println("Sent into stream - 1")
-			jaal.SubStreamManager.Lock.RUnlock()
+			data, _ := json.Marshal(temp)
+			top.Publish(ctx, &pubsub.Message{
+				Data: data,
+			})
 		}
 	}()
-	go func() {
-		for {
-			time.Sleep(2 * time.Second)
-			jaal.SubStreamManager.Lock.RLock()
-			jaal.SubStreamManager.SubTypeStreams["channelStream"] <- sourceChannel{
-				idgen.New("source"),
-				"Uptown",
-				"Funk",
-			}
-			fmt.Println("Sent into stream - 2")
-			jaal.SubStreamManager.Lock.RUnlock()
-		}
-	}()
+	// go func() {
+	// 	for {
+	// 		time.Sleep(2 * time.Second)
+	// 		jaal.SubStreamManager.Lock.RLock()
+	// 		jaal.SourceStream <- SourceEvent{
+	// 			Payload: []interface{}{"channelStream", sourceChannel{
+	// 				idgen.New("source"),
+	// 				"Table",
+	// 				"Saheb",
+	// 			}},
+	// 			Errors: nil,
+	// 		}
+	// 		fmt.Println("Sent into stream - 1")
+	// 		jaal.SubStreamManager.Lock.RUnlock()
+	// 	}
+	// }()
+	// go func() {
+	// 	for {
+	// 		time.Sleep(2 * time.Second)
+	// 		jaal.SubStreamManager.Lock.RLock()
+	// 		jaal.SourceStream <- SourceEvent{
+	// 			Payload: []interface{}{"channelStream", sourceChannel{
+	// 				idgen.New("source"),
+	// 				"Uptown",
+	// 				"Funk",
+	// 			}},
+	// 		}
+	// 		fmt.Println("Sent into stream - 2")
+	// 		jaal.SubStreamManager.Lock.RUnlock()
+	// 	}
+	// }()
 	http.ListenAndServe(":3000", nil)
 }

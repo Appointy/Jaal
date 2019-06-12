@@ -1,9 +1,22 @@
 package jaal
 
 import (
+	"context"
 	"fmt"
+	"reflect"
 	"sync"
+
+	"cloud.google.com/go/pubsub"
 )
+
+/* TODO :
+SEPARATE SUBTYPESTREAMS BECAUSE THEY DON'T NEED LOCKS.
+MAKE DIFFERENT STRUCTS FOR LOCK AND NON-LOCK IMPLEMENTED VARIABLES
+*/
+
+type Subscription interface {
+	Receive(context.Context, func(context.Context, *pubsub.Message)) error
+}
 
 // for each subscription type list of all user channels to pass them source events
 type typeNotif struct {
@@ -20,6 +33,11 @@ type subStreamManager struct {
 // SubStreamManager manages all the client streams and the source event streams for each subscription type
 var SubStreamManager subStreamManager
 
+// SourceStream ...
+var SourceStream = make(chan interface{})
+
+var resolvers = make(map[string]interface{})
+
 func init() {
 	SubStreamManager = subStreamManager{
 		make(map[string]chan interface{}),
@@ -29,7 +47,12 @@ func init() {
 }
 
 // RegisterSubType - RCall at the server before making a subscription field func
-func RegisterSubType(subType string) error {
+func RegisterSubType(subType string, resolver interface{}) error {
+
+	if err := checkResolver(resolver); err != nil {
+		return err
+	}
+
 	SubStreamManager.Lock.RLock()
 	if _, ok := SubStreamManager.SubTypeStreams[subType]; ok {
 		SubStreamManager.Lock.RUnlock()
@@ -37,11 +60,51 @@ func RegisterSubType(subType string) error {
 	}
 	SubStreamManager.Lock.RUnlock()
 
+	resolvers[subType] = resolver
+
 	SubStreamManager.Lock.Lock()
 	SubStreamManager.SubTypeStreams[subType] = make(chan interface{}, 1)
 	SubStreamManager.ServerTypeNotifs[subType] = &typeNotif{make(map[string]chan interface{}), make(chan chan interface{}, 1)}
 	SubStreamManager.Lock.Unlock()
 	return nil
+}
+
+// Source event to subscription type event resolvers should be of type - func(anyType) anyType, error
+func checkResolver(f interface{}) error {
+	v := reflect.ValueOf(f)
+	if v.Kind() != reflect.Func {
+		return fmt.Errorf("Resolver should be of type func(anyType) (anyType, error)")
+	}
+	if v.Type().NumOut() != 2 {
+		return fmt.Errorf("Resolver should have only 2 return values")
+	}
+	errorType := reflect.TypeOf((*error)(nil)).Elem()
+	if v.Type().Out(1) != errorType {
+		return fmt.Errorf("Resolver's second return type should be error type")
+	}
+	return nil
+}
+
+//SourceEventListener ...
+func SourceEventListener(ctx context.Context, sub Subscription) {
+	//-------------------For a Google PubSub subscription type----------------------------
+	if err := sub.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
+		for v, k := range resolvers {
+			f := reflect.ValueOf(k)
+			fmt.Println("Calling resolver")
+			output := f.Call([]reflect.Value{reflect.ValueOf(m)})
+			if output[1].Interface() != nil {
+				continue
+			}
+			fmt.Println("Sent into", v, "stream")
+			SubStreamManager.Lock.RLock()
+			SubStreamManager.SubTypeStreams[v] <- output[0].Interface()
+			SubStreamManager.Lock.RUnlock()
+		}
+		m.Ack()
+	}); err != nil {
+		fmt.Println("Error in recieving PubSub message")
+	}
 }
 
 // AddClientDaemon - Launch as go routine for every subscription type registered

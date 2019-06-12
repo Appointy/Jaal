@@ -192,7 +192,7 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	id := idgen.New("usr")
 	fmt.Println(id)
-	// TODO : Add support for multiple fields in the selection set of subscription
+
 	usrChannel := make(chan interface{})
 	SubStreamManager.Lock.RLock()
 	SubStreamManager.ServerTypeNotifs[subType].ServerTypeNotif <- usrChannel
@@ -228,6 +228,7 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				disconnect = true
 				fmt.Println(err)
 			}
+			// In case of pointer return type for subscription type resolver, filter out the null reponses
 			if reflect.TypeOf(output.(map[string]interface{})[subType]) != nil {
 				conn.WriteMessage(1, getResponse(output, nil))
 			}
