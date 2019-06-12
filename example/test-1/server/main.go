@@ -27,6 +27,12 @@ type channel struct {
 	Metadata map[string]string
 }
 
+type post struct {
+	Id    string
+	Title string
+	Tag   string
+}
+
 type createChannelReq struct {
 	Id    string
 	Name  string
@@ -41,6 +47,10 @@ type channelStreamReq struct {
 	Name string
 }
 
+type postStreamReq struct {
+	Tag string
+}
+
 // server is our graphql server.
 type server struct {
 	channels []channel
@@ -53,10 +63,9 @@ type sourceChannel struct {
 	LastName  string
 }
 
-// Struct for SourceEvent
-type SourceEvent struct {
-	Payload []interface{}
-	Errors  []error
+type sourcePost struct {
+	Title string
+	Tag   string
 }
 
 // registerQuery registers the root query type.
@@ -66,13 +75,11 @@ func (s *server) registerQuery(schema *schemabuilder.Schema) {
 	obj.FieldFunc("channel", func(ctx context.Context, args struct {
 		In getChannelReq
 	}) *channel {
-		fmt.Println("dddddd")
 		for _, ch := range s.channels {
 			if ch.Id == args.In.Id {
 				return &ch
 			}
 		}
-
 		return nil
 	})
 }
@@ -111,6 +118,40 @@ func (s *server) registerSubscription(schema *schemabuilder.Schema) {
 		}
 		return nil
 	})
+
+	if err := jaal.RegisterSubType("channelStream", func(source *pubsub.Message) (sourceChannel, error) {
+		var temp sourceChannel
+		if err := json.Unmarshal(source.Data, &temp); err != nil {
+			return sourceChannel{}, err
+		}
+		return temp, nil
+	}); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	obj.FieldFunc("postStream", func(source *schemabuilder.Subscription, args struct {
+		In postStreamReq
+	}) *post {
+		temp := source.Source.(sourcePost)
+		if args.In.Tag == temp.Tag {
+			return &post{
+				Id:    idgen.New("post"),
+				Title: temp.Title,
+				Tag:   temp.Tag,
+			}
+		}
+		return nil
+	})
+	if err := jaal.RegisterSubType("postStream", func(source *pubsub.Message) (sourcePost, error) {
+		var temp sourcePost
+		if err := json.Unmarshal(source.Data, &temp); err != nil {
+			return sourcePost{}, err
+		}
+		return temp, nil
+	}); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
 
 // schema builds the graphql schema.
@@ -126,6 +167,20 @@ func (s *server) schema() *graphql.Schema {
 	})
 	obj.FieldFunc("email", func(ctx context.Context, in *channel) string {
 		return in.Email
+	})
+
+	obj = builder.Object("post", post{})
+
+	obj.FieldFunc("id", func(ctx context.Context, in *post) schemabuilder.ID {
+		return schemabuilder.ID{Value: in.Id}
+	})
+
+	obj.FieldFunc("title", func(ctx context.Context, in *post) string {
+		return in.Title
+	})
+
+	obj.FieldFunc("tag", func(ctx context.Context, in *post) string {
+		return in.Tag
 	})
 
 	inputObject := builder.InputObject("createChannelReq", createChannelReq{})
@@ -149,20 +204,14 @@ func (s *server) schema() *graphql.Schema {
 		in.Name = *name
 	})
 
+	inputObject = builder.InputObject("postStreamReq", postStreamReq{})
+	inputObject.FieldFunc("tag", func(in *postStreamReq, tag *string) {
+		in.Tag = *tag
+	})
+
 	fmt.Println("objects")
 	s.registerQuery(builder)
 	s.registerMutation(builder)
-	if err := jaal.RegisterSubType("channelStream", func(source *pubsub.Message) (sourceChannel, error) {
-		var temp sourceChannel
-		if err := json.Unmarshal(source.Data, &temp); err != nil {
-			return sourceChannel{}, err
-		}
-		return temp, nil
-	}); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
 	s.registerSubscription(builder)
 
 	return builder.MustBuild()
@@ -184,11 +233,10 @@ func main() {
 
 	schema := server.schema()
 	fmt.Println("built")
-
+	//jaal.runSubscriptionServices()
 	introspection.AddIntrospectionToSchema(schema)
 	http.Handle("/graphql", jaal.HTTPHandler(schema))
 	http.Handle("/graphql/sub", jaal.HTTPSubHandler(schema))
-	fmt.Println("Running")
 
 	ctx := context.Background()
 	s := pstest.NewServer()
@@ -216,63 +264,45 @@ func main() {
 		fmt.Println("failed to create subscription:", err)
 		return
 	}
-	go jaal.AddClientDaemon("channelStream")
-	go jaal.SourceSubTypeTrigger("channelStream")
-	go jaal.SourceEventListener(ctx, sub)
 
+	jaal.RunSubscriptionServices(ctx, sub)
+
+	fmt.Println("Running")
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
-			var temp sourceChannel
-			if rand.Intn(10) < 5 {
+			temp := sourceChannel{}
+			var temp2 sourcePost
+			t := rand.Intn(100)
+			if t < 33 {
 				temp = sourceChannel{
 					Id:        idgen.New("src"),
 					FirstName: "Serial",
 					LastName:  "Killer",
 				}
-			} else {
+			} else if t >= 33 && t < 66 {
 				temp = sourceChannel{
 					Id:        idgen.New("src"),
 					FirstName: "Dirty",
 					LastName:  "Shoe",
 				}
+			} else {
+				temp2 = sourcePost{
+					Title: "Master of Skins",
+					Tag:   "Huer",
+				}
 			}
-			data, _ := json.Marshal(temp)
+			var data []byte
+			if (temp != sourceChannel{}) {
+				data, _ = json.Marshal(temp)
+			} else {
+				data, _ = json.Marshal(temp2)
+			}
 			top.Publish(ctx, &pubsub.Message{
 				Data: data,
 			})
 		}
 	}()
-	// go func() {
-	// 	for {
-	// 		time.Sleep(2 * time.Second)
-	// 		jaal.SubStreamManager.Lock.RLock()
-	// 		jaal.SourceStream <- SourceEvent{
-	// 			Payload: []interface{}{"channelStream", sourceChannel{
-	// 				idgen.New("source"),
-	// 				"Table",
-	// 				"Saheb",
-	// 			}},
-	// 			Errors: nil,
-	// 		}
-	// 		fmt.Println("Sent into stream - 1")
-	// 		jaal.SubStreamManager.Lock.RUnlock()
-	// 	}
-	// }()
-	// go func() {
-	// 	for {
-	// 		time.Sleep(2 * time.Second)
-	// 		jaal.SubStreamManager.Lock.RLock()
-	// 		jaal.SourceStream <- SourceEvent{
-	// 			Payload: []interface{}{"channelStream", sourceChannel{
-	// 				idgen.New("source"),
-	// 				"Uptown",
-	// 				"Funk",
-	// 			}},
-	// 		}
-	// 		fmt.Println("Sent into stream - 2")
-	// 		jaal.SubStreamManager.Lock.RUnlock()
-	// 	}
-	// }()
+
 	http.ListenAndServe(":3000", nil)
 }

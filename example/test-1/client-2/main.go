@@ -1,14 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 
 	"github.com/gorilla/websocket"
 )
@@ -19,17 +17,17 @@ type httpPostBody struct {
 }
 
 func main() {
-	r := bufio.NewReader(os.Stdin)
-	fmt.Println("Enter the name you want to subscribe to - ")
-	name, err := r.ReadString('\n')
-	if err != nil {
-		fmt.Println("couldn't process user input")
-	}
+	// r := bufio.NewReader(os.Stdin)
+	// fmt.Println("Enter the name you want to subscribe to - ")
+	// name, err := r.ReadString('\n')
+	// if err != nil {
+	// 	fmt.Println("couldn't process user input")
+	// }
 	queryString := `subscription{
-			channelStream(in: {name: "` + name[0:len(name)-1] + `"}) {
+			postStream(in: {tag: "Huer"}) {
 				id
-				email
-				name
+				tag
+				title
 			}
 		}`
 
@@ -52,7 +50,7 @@ func main() {
 	defer c.Close()
 
 	for {
-		if rand.Intn(100) < 40 {
+		if rand.Intn(100) < 20 {
 			c.WriteMessage(1, []byte(""))
 			continue
 		}

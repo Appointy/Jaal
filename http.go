@@ -194,9 +194,9 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(id)
 
 	usrChannel := make(chan interface{})
-	SubStreamManager.Lock.RLock()
-	SubStreamManager.ServerTypeNotifs[subType].ServerTypeNotif <- usrChannel
-	SubStreamManager.Lock.RUnlock()
+	RuntimeSubManager.Lock.RLock()
+	RuntimeSubManager.ServerTypeNotifs[subType].ServerTypeNotif <- usrChannel
+	RuntimeSubManager.Lock.RUnlock()
 	usrChannel <- id
 
 	// Client side unsubscribe/disconnect signal

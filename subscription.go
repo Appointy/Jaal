@@ -9,63 +9,70 @@ import (
 	"cloud.google.com/go/pubsub"
 )
 
-/* TODO :
-SEPARATE SUBTYPESTREAMS BECAUSE THEY DON'T NEED LOCKS.
-MAKE DIFFERENT STRUCTS FOR LOCK AND NON-LOCK IMPLEMENTED VARIABLES
-*/
-
+// Subscription ...
 type Subscription interface {
 	Receive(context.Context, func(context.Context, *pubsub.Message)) error
 }
 
-// for each subscription type list of all user channels to pass them source events
+// For each subscription type list of all user channels to pass them source events
 type typeNotif struct {
 	Clients         map[string]chan interface{}
 	ServerTypeNotif chan chan interface{}
 }
 
-type subStreamManager struct {
-	SubTypeStreams   map[string]chan interface{}
+type runtimeSubManager struct {
 	ServerTypeNotifs map[string]*typeNotif
 	Lock             *sync.RWMutex
 }
 
-// SubStreamManager manages all the client streams and the source event streams for each subscription type
-var SubStreamManager subStreamManager
+type subTypeManager struct {
+	SubTypeStreams map[string]chan interface{}
+	SourceStream   chan interface{}
+	Resolvers      map[string]interface{}
+}
 
-// SourceStream ...
-var SourceStream = make(chan interface{})
+// RuntimeSubManager manages all the client streams and the source event streams for each subscription type
+var RuntimeSubManager runtimeSubManager
 
-var resolvers = make(map[string]interface{})
+// SubTypeManager ...
+var SubTypeManager subTypeManager
 
 func init() {
-	SubStreamManager = subStreamManager{
-		make(map[string]chan interface{}),
+	RuntimeSubManager = runtimeSubManager{
 		make(map[string]*typeNotif),
 		&sync.RWMutex{},
 	}
+	SubTypeManager = subTypeManager{
+		make(map[string]chan interface{}),
+		make(chan interface{}),
+		make(map[string]interface{}),
+	}
 }
 
-// RegisterSubType - RCall at the server before making a subscription field func
+// RunSubscriptionServices ...
+func RunSubscriptionServices(ctx context.Context, sub Subscription) {
+	for k := range SubTypeManager.SubTypeStreams {
+		go AddClientDaemon(k)
+		go SourceSubTypeTrigger(k)
+	}
+	go SourceEventListener(ctx, sub)
+}
+
+// RegisterSubType - Call at the server before making a subscription field func
 func RegisterSubType(subType string, resolver interface{}) error {
 
 	if err := checkResolver(resolver); err != nil {
 		return err
 	}
-
-	SubStreamManager.Lock.RLock()
-	if _, ok := SubStreamManager.SubTypeStreams[subType]; ok {
-		SubStreamManager.Lock.RUnlock()
+	if _, ok := SubTypeManager.SubTypeStreams[subType]; ok {
 		return fmt.Errorf("Type already registered")
 	}
-	SubStreamManager.Lock.RUnlock()
 
-	resolvers[subType] = resolver
-
-	SubStreamManager.Lock.Lock()
-	SubStreamManager.SubTypeStreams[subType] = make(chan interface{}, 1)
-	SubStreamManager.ServerTypeNotifs[subType] = &typeNotif{make(map[string]chan interface{}), make(chan chan interface{}, 1)}
-	SubStreamManager.Lock.Unlock()
+	SubTypeManager.Resolvers[subType] = resolver
+	SubTypeManager.SubTypeStreams[subType] = make(chan interface{}, 1)
+	RuntimeSubManager.Lock.Lock()
+	RuntimeSubManager.ServerTypeNotifs[subType] = &typeNotif{make(map[string]chan interface{}), make(chan chan interface{}, 1)}
+	RuntimeSubManager.Lock.Unlock()
 	return nil
 }
 
@@ -89,7 +96,7 @@ func checkResolver(f interface{}) error {
 func SourceEventListener(ctx context.Context, sub Subscription) {
 	//-------------------For a Google PubSub subscription type----------------------------
 	if err := sub.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
-		for v, k := range resolvers {
+		for v, k := range SubTypeManager.Resolvers {
 			f := reflect.ValueOf(k)
 			fmt.Println("Calling resolver")
 			output := f.Call([]reflect.Value{reflect.ValueOf(m)})
@@ -97,28 +104,26 @@ func SourceEventListener(ctx context.Context, sub Subscription) {
 				continue
 			}
 			fmt.Println("Sent into", v, "stream")
-			SubStreamManager.Lock.RLock()
-			SubStreamManager.SubTypeStreams[v] <- output[0].Interface()
-			SubStreamManager.Lock.RUnlock()
+			SubTypeManager.SubTypeStreams[v] <- output[0].Interface()
 		}
 		m.Ack()
 	}); err != nil {
-		fmt.Println("Error in recieving PubSub message")
+		fmt.Println("Error in receiving PubSub message")
 	}
 }
 
 // AddClientDaemon - Launch as go routine for every subscription type registered
 func AddClientDaemon(subType string) {
-	SubStreamManager.Lock.RLock()
-	serverListener := SubStreamManager.ServerTypeNotifs[subType].ServerTypeNotif
-	SubStreamManager.Lock.RUnlock()
+	RuntimeSubManager.Lock.RLock()
+	serverListener := RuntimeSubManager.ServerTypeNotifs[subType].ServerTypeNotif
+	RuntimeSubManager.Lock.RUnlock()
 	for client := range serverListener {
 		// Add the client notifier in the server's log of clients for a particular subtype
 		id := <-client
 		fmt.Println("Received:", id)
-		SubStreamManager.Lock.Lock()
-		SubStreamManager.ServerTypeNotifs[subType].Clients[id.(string)] = client
-		SubStreamManager.Lock.Unlock()
+		RuntimeSubManager.Lock.Lock()
+		RuntimeSubManager.ServerTypeNotifs[subType].Clients[id.(string)] = client
+		RuntimeSubManager.Lock.Unlock()
 		fmt.Println("stored client")
 
 	}
@@ -126,23 +131,20 @@ func AddClientDaemon(subType string) {
 
 // SourceSubTypeTrigger - Launch as go routine for every subscription type to listen for source events from SubTypeStreams
 func SourceSubTypeTrigger(subType string) {
-	SubStreamManager.Lock.RLock()
-	subTypeListener := SubStreamManager.SubTypeStreams[subType]
-	SubStreamManager.Lock.RUnlock()
-	for i := range subTypeListener {
+	for i := range SubTypeManager.SubTypeStreams[subType] {
 		fmt.Println("Received from stream")
-		SubStreamManager.Lock.RLock()
-		for k, v := range SubStreamManager.ServerTypeNotifs[subType].Clients {
+		RuntimeSubManager.Lock.RLock()
+		for k, v := range RuntimeSubManager.ServerTypeNotifs[subType].Clients {
 			fmt.Println("Sending to client", k, "...")
 			v <- i
 			fmt.Println("Sent to client")
 		}
-		SubStreamManager.Lock.RUnlock()
+		RuntimeSubManager.Lock.RUnlock()
 	}
 }
 
 func deleteEntries(id string, subType string) {
-	SubStreamManager.Lock.Lock()
-	delete(SubStreamManager.ServerTypeNotifs[subType].Clients, id)
-	SubStreamManager.Lock.Unlock()
+	RuntimeSubManager.Lock.Lock()
+	delete(RuntimeSubManager.ServerTypeNotifs[subType].Clients, id)
+	RuntimeSubManager.Lock.Unlock()
 }
