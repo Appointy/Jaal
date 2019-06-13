@@ -18,10 +18,11 @@ type httpPostBody struct {
 
 func main() {
 	// r := bufio.NewReader(os.Stdin)
-	// fmt.Println("Enter the name you want to subscribe to - ")
+	// fmt.Println("Enter the tag you want to subscribe to - ")
 	// name, err := r.ReadString('\n')
 	// if err != nil {
 	// 	fmt.Println("couldn't process user input")
+	//	return
 	// }
 	queryString := `subscription{
 			postStream(in: {tag: "Huer"}) {
@@ -38,7 +39,7 @@ func main() {
 		return
 	}
 	header := make(http.Header)
-	header.Add("body", string(query))
+	header.Add("query", string(query))
 	u := url.URL{Scheme: "ws", Host: "localhost:3000", Path: "/graphql/sub"}
 	c, resp, err := websocket.DefaultDialer.Dial(u.String(), header)
 	if err != nil {

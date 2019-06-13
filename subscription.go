@@ -9,12 +9,12 @@ import (
 	"cloud.google.com/go/pubsub"
 )
 
-// Subscription ...
+// Subscription is an interface implemented for source stream subscriptions
 type Subscription interface {
 	Receive(context.Context, func(context.Context, *pubsub.Message)) error
 }
 
-// For each subscription type list of all user channels to pass them source events
+// For each subscription type, a list of all connection channels to broadcast subscription type filtered source events
 type typeNotif struct {
 	Clients         map[string]chan interface{}
 	ServerTypeNotif chan chan interface{}
@@ -31,10 +31,10 @@ type subTypeManager struct {
 	Resolvers      map[string]interface{}
 }
 
-// RuntimeSubManager manages all the client streams and the source event streams for each subscription type
+// RuntimeSubManager stores all the connection streams for each subscription type
 var RuntimeSubManager runtimeSubManager
 
-// SubTypeManager ...
+// SubTypeManager stores all the subscription type and the source event streams
 var SubTypeManager subTypeManager
 
 func init() {
@@ -49,7 +49,7 @@ func init() {
 	}
 }
 
-// RunSubscriptionServices ...
+// RunSubscriptionServices launches all the daemons necessary for subscription implementation
 func RunSubscriptionServices(ctx context.Context, sub Subscription) {
 	for k := range SubTypeManager.SubTypeStreams {
 		go AddClientDaemon(k)
@@ -58,7 +58,7 @@ func RunSubscriptionServices(ctx context.Context, sub Subscription) {
 	go SourceEventListener(ctx, sub)
 }
 
-// RegisterSubType - Call at the server before making a subscription field func
+// RegisterSubType - Call at the server before/after making a subscription field func
 func RegisterSubType(subType string, resolver interface{}) error {
 
 	if err := checkResolver(resolver); err != nil {
@@ -92,7 +92,7 @@ func checkResolver(f interface{}) error {
 	return nil
 }
 
-//SourceEventListener ...
+// SourceEventListener listens for a source event and sends it to the corresponding subscription type stream
 func SourceEventListener(ctx context.Context, sub Subscription) {
 	//-------------------For a Google PubSub subscription type----------------------------
 	if err := sub.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
@@ -129,7 +129,7 @@ func AddClientDaemon(subType string) {
 	}
 }
 
-// SourceSubTypeTrigger - Launch as go routine for every subscription type to listen for source events from SubTypeStreams
+// SourceSubTypeTrigger - Launch as go routine for every subscription type to listen for filtered source events from SubTypeStreams
 func SourceSubTypeTrigger(subType string) {
 	for i := range SubTypeManager.SubTypeStreams[subType] {
 		fmt.Println("Received from stream")
@@ -143,6 +143,7 @@ func SourceSubTypeTrigger(subType string) {
 	}
 }
 
+// Delete the connection channel from storage
 func deleteEntries(id string, subType string) {
 	RuntimeSubManager.Lock.Lock()
 	delete(RuntimeSubManager.ServerTypeNotifs[subType].Clients, id)
