@@ -251,9 +251,9 @@ func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source 
 			fields[selection.Alias] = resolved
 		}
 	}
-	if len(possibleTypes) > 1 {
-		return nil, fmt.Errorf("interface type field should only return one value, but received: %s", strings.Join(possibleTypes, " "))
-	}
+	// if len(possibleTypes) > 1 {
+	// 	return nil, fmt.Errorf("interface type field should only return one value, but received: %s", strings.Join(possibleTypes, " "))
+	// }
 	return fields, nil
 }
 
