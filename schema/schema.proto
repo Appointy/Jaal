@@ -23,6 +23,11 @@ extend google.protobuf.MessageOptions{
     string name = 91114;
 }
 
+extend google.protobuf.FieldOptions{
+    bool input_skip = 91115;
+    bool payload_skip = 91116;
+}
+
 message MethodOptions {
     oneof type {
         string query = 1;
