@@ -259,5 +259,5 @@ type Duration duration.Duration
 
 // MarshalJSON implements JSON Marshalling used to generate the output
 func (d Duration) MarshalJSON() ([]byte, error) {
-	return strconv.AppendQuote(nil, string(d.Seconds)), nil
+	return []byte(strconv.Itoa(int(d.Seconds))), nil
 }
