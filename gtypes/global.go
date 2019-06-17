@@ -68,14 +68,13 @@ func RegisterEmpty() {
 func RegisterDuration() {
 	typ := reflect.TypeOf(duration.Duration{})
 	schemabuilder.RegisterScalar(typ, "Duration", func(value interface{}, target reflect.Value) error {
-		v, ok := value.(int64)
+		v, ok := value.(float64)
 		if !ok {
 			return errors.New("invalid type expected a string")
 		}
 
-		target.Field(0).SetInt(v)
+		target.Field(0).SetInt(int64(v))
 		target.Field(1).SetInt(0)
-
 		return nil
 	})
 }
