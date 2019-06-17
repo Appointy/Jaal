@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/golang/protobuf/ptypes/duration"
 )
 
 //Object - an Object represents a Go type and set of methods to be converted into an Object in a GraphQL schema.
@@ -251,4 +252,12 @@ type Map struct {
 // MarshalJSON implements JSON Marshalling used to generate the output
 func (m Map) MarshalJSON() ([]byte, error) {
 	return []byte(m.Value), nil
+}
+
+//Duration handles the duration
+type Duration duration.Duration
+
+// MarshalJSON implements JSON Marshalling used to generate the output
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return strconv.AppendQuote(nil, string(d.Seconds)), nil
 }

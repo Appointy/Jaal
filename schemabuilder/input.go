@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	"github.com/golang/protobuf/ptypes/duration"
 	"go.appointy.com/jaal/graphql"
 )
 
@@ -456,6 +457,18 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 
 			dest.Field(0).SetInt(int64(t.Unix()))
 			dest.Field(1).SetInt(int64(t.Nanosecond()))
+			return nil
+		},
+	},
+	reflect.TypeOf(Timestamp(duration.Duration{})): {
+		FromJSON: func(value interface{}, dest reflect.Value) error {
+			v, ok := value.(float64)
+			if !ok {
+				return errors.New("invalid type expected a number")
+			}
+
+			dest.Field(0).SetInt(int64(v))
+			dest.Field(1).SetInt(int64(0))
 			return nil
 		},
 	},
