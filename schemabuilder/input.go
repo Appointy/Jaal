@@ -460,7 +460,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 			return nil
 		},
 	},
-	reflect.TypeOf(Timestamp(duration.Duration{})): {
+	reflect.TypeOf(Duration(duration.Duration{})): {
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(float64)
 			if !ok {
