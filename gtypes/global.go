@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"reflect"
 	"time"
 
@@ -69,21 +68,13 @@ func RegisterEmpty() {
 func RegisterDuration() {
 	typ := reflect.TypeOf(duration.Duration{})
 	schemabuilder.RegisterScalar(typ, "Duration", func(value interface{}, target reflect.Value) error {
-		v, ok := value.(string)
+		v, ok := value.(int64)
 		if !ok {
 			return errors.New("invalid type expected a string")
 		}
 
-		d, err := time.ParseDuration(v)
-		if err != nil {
-			return fmt.Errorf("bad Duration: %v", err)
-		}
-
-		ns := d.Nanoseconds()
-		s := ns / 1e9
-		ns %= 1e9
-		target.Field(0).SetInt(s)
-		target.Field(1).SetInt(ns)
+		target.Field(0).SetInt(v)
+		target.Field(1).SetInt(0)
 
 		return nil
 	})
