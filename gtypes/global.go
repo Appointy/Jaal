@@ -26,7 +26,7 @@ func init() {
 
 //RegisterWellKnownTypes registers the commonly used scalars
 func RegisterWellKnownTypes() {
-	// RegisterDuration()
+	RegisterDuration()
 	// RegisterTimestamp()
 	RegisterEmpty()
 	// RegisterStringStringMap()
