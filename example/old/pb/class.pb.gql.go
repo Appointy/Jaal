@@ -55,7 +55,7 @@ func registerClass(schema *schemabuilder.Schema) {
 		}
 
 		encodedValue := base64.StdEncoding.EncodeToString(data)
-		return &schemabuilder.Map{Value : encodedValue}, nil
+		return &schemabuilder.Map{Value: encodedValue}, nil
 	})
 	obj.FieldFunc("parent", func(ctx context.Context, in *Class) string {
 		return in.Parent

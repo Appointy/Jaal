@@ -115,8 +115,8 @@ func Parse(source string, vars map[string]interface{}) (*Query, error) {
 	globalFragments := make(map[string]*FragmentDefinition)
 	for name, fragment := range fragmentDefinitions {
 		globalFragments[name] = &FragmentDefinition{
-			Name:fragment.Name.Value,
-			On: fragment.TypeCondition.Name.Value,
+			Name: fragment.Name.Value,
+			On:   fragment.TypeCondition.Name.Value,
 		}
 	}
 
@@ -463,7 +463,7 @@ func detectConflicts(selectionSet *SelectionSet) error {
 //
 // Flatten does _not_ flatten out the inner queries, so the name above does not
 // get flattened out yet.
-func Flatten(selectionSet *SelectionSet) ([]*Selection,error) {
+func Flatten(selectionSet *SelectionSet) ([]*Selection, error) {
 	grouped := make(map[string][]*Selection)
 
 	state := make(map[*SelectionSet]visitState)
@@ -478,13 +478,13 @@ func Flatten(selectionSet *SelectionSet) ([]*Selection,error) {
 		}
 		for _, fragment := range selectionSet.Fragments {
 			if ok, err := shouldIncludeNode(fragment.Directives); err != nil {
-				return fmt.Errorf("%s - %s",fragment.Fragment.Name, err)
+				return fmt.Errorf("%s - %s", fragment.Fragment.Name, err)
 
 			} else if !ok {
 				continue
 
 			}
-			if err :=  visit(fragment.Fragment.SelectionSet); err!= nil{
+			if err := visit(fragment.Fragment.SelectionSet); err != nil {
 				return err
 			}
 		}
@@ -493,8 +493,8 @@ func Flatten(selectionSet *SelectionSet) ([]*Selection,error) {
 		return nil
 	}
 
-	if err := visit(selectionSet); err != nil{
-		return nil,err
+	if err := visit(selectionSet); err != nil {
+		return nil, err
 	}
 
 	var flattened []*Selection
@@ -518,5 +518,5 @@ func Flatten(selectionSet *SelectionSet) ([]*Selection,error) {
 		})
 	}
 
-	return flattened,nil
+	return flattened, nil
 }

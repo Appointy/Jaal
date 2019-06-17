@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/graphql"
 )
@@ -117,4 +118,5 @@ var scalars = map[reflect.Type]string{
 	reflect.TypeOf(ID{Value: ""}):                    "ID",
 	reflect.TypeOf(Map{Value: ""}):                   "Map",
 	reflect.TypeOf(Timestamp(timestamp.Timestamp{})): "Timestamp",
+	reflect.TypeOf(Duration(duration.Duration{})):    "Duration",
 }

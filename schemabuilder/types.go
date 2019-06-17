@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/duration"
+	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 //Object - an Object represents a Go type and set of methods to be converted into an Object in a GraphQL schema.

@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/duration"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/graphql"
 )
 

@@ -212,20 +212,20 @@ func (s *Schema) MustBuild() *graphql.Schema {
 func (s *Schema) Clone() *Schema {
 	copy := Schema{
 		objects:      make(map[string]*Object, len(s.objects)),
-		inputObjects: make(map[string]*InputObject,len(s.inputObjects)),
-		enumTypes:    make(map[reflect.Type]*EnumMapping,len(s.enumTypes)),
+		inputObjects: make(map[string]*InputObject, len(s.inputObjects)),
+		enumTypes:    make(map[reflect.Type]*EnumMapping, len(s.enumTypes)),
 	}
 
-	for key, value := range s.objects{
-		copy.objects[key]=copyObject(value)
+	for key, value := range s.objects {
+		copy.objects[key] = copyObject(value)
 	}
 
-	for key,value := range s.inputObjects{
-		copy.inputObjects[key]=copyInputObject(value)
+	for key, value := range s.inputObjects {
+		copy.inputObjects[key] = copyInputObject(value)
 	}
 
-	for key,value := range s.enumTypes{
-		copy.enumTypes[key]=copyEnumMappings(value)
+	for key, value := range s.enumTypes {
+		copy.enumTypes[key] = copyEnumMappings(value)
 	}
 
 	return &copy
@@ -263,18 +263,18 @@ func copyInputObject(input *InputObject) *InputObject {
 	return copy
 }
 
-func copyEnumMappings(mapping *EnumMapping) *EnumMapping  {
+func copyEnumMappings(mapping *EnumMapping) *EnumMapping {
 	enum := &EnumMapping{
-		Map: make(map[string]interface{},len(mapping.Map)),
-		ReverseMap:make( map[interface{}]string,len(mapping.ReverseMap)),
+		Map:        make(map[string]interface{}, len(mapping.Map)),
+		ReverseMap: make(map[interface{}]string, len(mapping.ReverseMap)),
 	}
 
-	for key,value := range mapping.Map{
+	for key, value := range mapping.Map {
 		enum.Map[key] = value
 	}
 
-	for key,value := range mapping.ReverseMap{
-		enum.ReverseMap[key]=value
+	for key, value := range mapping.ReverseMap {
+		enum.ReverseMap[key] = value
 	}
 
 	return enum
