@@ -261,3 +261,7 @@ type Duration duration.Duration
 func (d Duration) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Itoa(int(d.Seconds))), nil
 }
+
+func (b []byte) MarshalJSON()([]byte, error) {
+	return []byte(string(b)), nil
+}
