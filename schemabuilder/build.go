@@ -119,5 +119,5 @@ var scalars = map[reflect.Type]string{
 	reflect.TypeOf(Map{Value: ""}):                   "Map",
 	reflect.TypeOf(Timestamp(timestamp.Timestamp{})): "Timestamp",
 	reflect.TypeOf(Duration(duration.Duration{})):    "Duration",
-	reflect.TypeOf([]byte{}):                         "Bytes",
+	reflect.TypeOf(Bytes{Value:[]byte{}}):             "Bytes",
 }

@@ -261,3 +261,13 @@ type Duration duration.Duration
 func (d Duration) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.Itoa(int(d.Seconds))), nil
 }
+
+//Bytes handles the duration
+type Bytes struct {
+	Value []byte
+}
+
+// MarshalJSON implements JSON Marshalling used to generate the output
+func (b Bytes) MarshalJSON() ([]byte, error) {
+	return []byte(string(b.Value)), nil
+}
