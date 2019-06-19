@@ -472,4 +472,15 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 			return nil
 		},
 	},
+	reflect.TypeOf([]byte{}): {
+		FromJSON: func(value interface{}, dest reflect.Value) error {
+			v, ok := value.(string)
+			if !ok {
+				return errors.New("invalid type expected a string")
+			}
+
+			dest.Set(reflect.ValueOf([]byte(v)).Convert(dest.Type()))
+			return nil
+		},
+	},
 }
