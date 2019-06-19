@@ -479,7 +479,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 				return errors.New("invalid type expected a string")
 			}
 
-			dest.Field(0).SetString([]byte(v))
+			dest.Field(0).Set(reflect.ValueOf([]byte(v)))
 			return nil
 		},
 	},
