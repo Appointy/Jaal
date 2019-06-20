@@ -1,6 +1,7 @@
 package schemabuilder
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"reflect"
@@ -472,14 +473,19 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 			return nil
 		},
 	},
-	reflect.TypeOf(Bytes{Value:[]byte{}}): {
+	reflect.TypeOf(Bytes{Value: []byte{}}): {
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
 				return errors.New("invalid type expected a string")
 			}
 
-			dest.Field(0).Set(reflect.ValueOf([]byte(v)))
+			decodedValue, err := base64.StdEncoding.DecodeString(v)
+			if err != nil {
+				return err
+			}
+
+			dest.Field(0).Set(reflect.ValueOf(decodedValue))
 			return nil
 		},
 	},
