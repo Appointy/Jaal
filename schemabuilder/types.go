@@ -1,7 +1,6 @@
 package schemabuilder
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -270,6 +269,9 @@ type Bytes struct {
 
 // MarshalJSON implements JSON Marshalling used to generate the output
 func (b Bytes) MarshalJSON() ([]byte, error) {
-	str := base64.StdEncoding.EncodeToString(b.Value)
-	return []byte(str), nil
+	data, err := json.Marshal(b.Value)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
