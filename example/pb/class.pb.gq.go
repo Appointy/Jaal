@@ -7,7 +7,7 @@ import "google.golang.org/genproto/protobuf/field_mask"
 import "context"
 import "encoding/json"
 import "encoding/base64"
-import "go.appointy.com/jaal/gtypes"
+
 import "go.appointy.com/jaal/schemabuilder"
 
 func RegisterClassType(schema *schemabuilder.Schema) {
@@ -326,23 +326,23 @@ func RegisterClassesOperations(schema *schemabuilder.Schema, client ClassesClien
 
 }
 
-func init() {
+// func init() {
 
-	RegisterClassType(gtypes.Schema)
-	RegisterInputClass(gtypes.Schema)
-	RegisterInputClass_Lumpsum(gtypes.Schema)
-	RegisterInputClass_PerInstance(gtypes.Schema)
-	RegisterInputCreateClassInput(gtypes.Schema)
-	RegisterInputCreateClassReq(gtypes.Schema)
-	RegisterInputGetClassReq(gtypes.Schema)
-	RegisterInputServiceProvider(gtypes.Schema)
-	RegisterInputValue(gtypes.Schema)
-	RegisterPayloadClass(gtypes.Schema)
-	RegisterPayloadClass_Lumpsum(gtypes.Schema)
-	RegisterPayloadClass_PerInstance(gtypes.Schema)
-	RegisterPayloadCreateClassPayload(gtypes.Schema)
-	RegisterPayloadCreateClassReq(gtypes.Schema)
-	RegisterPayloadGetClassReq(gtypes.Schema)
-	RegisterPayloadServiceProvider(gtypes.Schema)
-	RegisterPayloadValue(gtypes.Schema)
-}
+// 	RegisterClassType(gtypes.Schema)
+// 	RegisterInputClass(gtypes.Schema)
+// 	RegisterInputClass_Lumpsum(gtypes.Schema)
+// 	RegisterInputClass_PerInstance(gtypes.Schema)
+// 	RegisterInputCreateClassInput(gtypes.Schema)
+// 	RegisterInputCreateClassReq(gtypes.Schema)
+// 	RegisterInputGetClassReq(gtypes.Schema)
+// 	RegisterInputServiceProvider(gtypes.Schema)
+// 	RegisterInputValue(gtypes.Schema)
+// 	RegisterPayloadClass(gtypes.Schema)
+// 	RegisterPayloadClass_Lumpsum(gtypes.Schema)
+// 	RegisterPayloadClass_PerInstance(gtypes.Schema)
+// 	RegisterPayloadCreateClassPayload(gtypes.Schema)
+// 	RegisterPayloadCreateClassReq(gtypes.Schema)
+// 	RegisterPayloadGetClassReq(gtypes.Schema)
+// 	RegisterPayloadServiceProvider(gtypes.Schema)
+// 	RegisterPayloadValue(gtypes.Schema)
+// }

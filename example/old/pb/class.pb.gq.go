@@ -7,27 +7,26 @@ import (
 
 	duration "github.com/golang/protobuf/ptypes/duration"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
-	"go.appointy.com/jaal/gtypes"
 	"go.appointy.com/jaal/schemabuilder"
 )
 
-func init() {
-	RegisterClassType(gtypes.Schema)
-	RegisterInputClass_PerInstance(gtypes.Schema)
-	RegisterPayloadClass_PerInstance(gtypes.Schema)
-	RegisterInputClass_Lumpsum(gtypes.Schema)
-	RegisterPayloadClass_Lumpsum(gtypes.Schema)
-	RegisterInputClass(gtypes.Schema)
-	RegisterPayloadClass(gtypes.Schema)
-	RegisterInputCreateClassReq(gtypes.Schema)
-	RegisterPayloadCreateClassReq(gtypes.Schema)
-	RegisterInputGetClassReq(gtypes.Schema)
-	RegisterPayloadGetClassReq(gtypes.Schema)
-	RegisterInputServiceProvider(gtypes.Schema)
-	RegisterPayloadServiceProvider(gtypes.Schema)
-	RegisterInputCreateClassInput(gtypes.Schema)
-	RegisterPayloadCreateClassPayload(gtypes.Schema)
-}
+// func init() {
+// 	RegisterClassType(gtypes.Schema)
+// 	RegisterInputClass_PerInstance(gtypes.Schema)
+// 	RegisterPayloadClass_PerInstance(gtypes.Schema)
+// 	RegisterInputClass_Lumpsum(gtypes.Schema)
+// 	RegisterPayloadClass_Lumpsum(gtypes.Schema)
+// 	RegisterInputClass(gtypes.Schema)
+// 	RegisterPayloadClass(gtypes.Schema)
+// 	RegisterInputCreateClassReq(gtypes.Schema)
+// 	RegisterPayloadCreateClassReq(gtypes.Schema)
+// 	RegisterInputGetClassReq(gtypes.Schema)
+// 	RegisterPayloadGetClassReq(gtypes.Schema)
+// 	RegisterInputServiceProvider(gtypes.Schema)
+// 	RegisterPayloadServiceProvider(gtypes.Schema)
+// 	RegisterInputCreateClassInput(gtypes.Schema)
+// 	RegisterPayloadCreateClassPayload(gtypes.Schema)
+// }
 
 func RegisterClassType(schema *schemabuilder.Schema) {
 	schema.Enum(ClassType(0), map[string]interface{}{
