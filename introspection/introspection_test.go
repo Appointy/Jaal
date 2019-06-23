@@ -234,13 +234,20 @@ func TestIntrospectionForInterface(t *testing.T) {
 							"name": "String",
 							"kind": "SCALAR",
 						},
+						map[string]interface{}{
+							"kind": "OBJECT",
+							"name": "Subscription",
+						},
 					},
 					"mutationType": map[string]interface{}{
 						"name":   "Mutation",
 						"kind":   "OBJECT",
 						"fields": []interface{}{},
 					},
-					"subscriptionType": nil,
+					"subscriptionType": map[string]interface{}{
+						"name": "Subscription",
+						"kind": "OBJECT",
+					},
 					"directives": []interface{}{
 						map[string]interface{}{
 							"name": "include",
