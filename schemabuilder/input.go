@@ -141,7 +141,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asBool, ok := value.(bool)
 			if !ok {
-				asBool = false
+				if value == nil {
+					asBool = false
+				} else {
+					return errors.New("not a bool")
+				}
 			}
 			dest.Set(reflect.ValueOf(asBool).Convert(dest.Type()))
 			return nil
@@ -151,7 +155,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(asFloat).Convert(dest.Type()))
 			return nil
@@ -161,7 +169,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(float32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -171,7 +183,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int64(asFloat)).Convert(dest.Type()))
 			return nil
@@ -181,7 +197,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -191,7 +211,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int16(asFloat)).Convert(dest.Type()))
 			return nil
@@ -201,7 +225,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int8(asFloat)).Convert(dest.Type()))
 			return nil
@@ -211,7 +239,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int64(asFloat)).Convert(dest.Type()))
 			return nil
@@ -221,7 +253,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(uint32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -231,7 +267,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(uint16(asFloat)).Convert(dest.Type()))
 			return nil
@@ -241,7 +281,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil{
+					asFloat = 0
+				}else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(uint8(asFloat)).Convert(dest.Type()))
 			return nil
@@ -251,7 +295,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asString, ok := value.(string)
 			if !ok {
-				asString = ""
+				if value == nil{
+					asString = ""
+				}else {
+					return errors.New("not a string")
+				}
 			}
 			dest.Set(reflect.ValueOf(asString).Convert(dest.Type()))
 			return nil
@@ -261,7 +309,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				v = ""
+				if value == nil{
+					v = ""
+				}else {
+					return errors.New("not a string")
+				}
 			}
 
 			dest.Field(0).SetString(v)
@@ -272,7 +324,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				v = ""
+				if value == nil{
+					v = ""
+				}else {
+					return errors.New("not a string")
+				}
 			}
 
 			dest.Field(0).SetString(v)
@@ -283,7 +339,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				return errors.New("invalid type expected a string")
+				return errors.New("invalid type expected string")
 			}
 
 			t, err := time.Parse(time.RFC3339, v)
@@ -300,7 +356,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(float64)
 			if !ok {
-				return errors.New("invalid type expected a number")
+				return errors.New("invalid type expected number")
 			}
 
 			dest.Field(0).SetInt(int64(v))
@@ -312,7 +368,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				return errors.New("invalid type expected a string")
+				return errors.New("invalid type expected string")
 			}
 
 			decodedValue, err := base64.StdEncoding.DecodeString(v)
