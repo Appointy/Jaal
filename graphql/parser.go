@@ -97,8 +97,6 @@ func Parse(source string, vars map[string]interface{}) (*Query, error) {
 				}
 			}
 
-			// TODO: properly implement coerceValue.
-			// See: https://github.com/graphql/graphql-js/blob/17a0bfd5292f39cafe4eec5b3bd0e22514243b68/src/execution/values.js#L84
 			val, err := valueToJson(variableDefinition.DefaultValue, nil)
 			if err != nil {
 				return rv, fmt.Errorf("failed to parse default value: %s", err.Error())

@@ -46,7 +46,6 @@ func parseGraphQLFieldInfo(field reflect.StructField) (*graphQLFieldInfo, error)
 	var key bool
 	var optional bool
 
-	//TODO: Add id scalar type and make it key
 	return &graphQLFieldInfo{Name: name, KeyField: key, OptionalInputField: optional}, nil
 }
 

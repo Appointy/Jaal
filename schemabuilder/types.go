@@ -127,9 +127,18 @@ func (s *Object) FieldFunc(name string, f interface{}) {
 // The target variable of the function should be pointer
 func (io *InputObject) FieldFunc(name string, function interface{}) {
 	funcTyp := reflect.TypeOf(function)
+
+	if funcTyp.NumIn() != 2{
+		panic(fmt.Errorf("can not register field %v on %v as number of input argument should be 2", name, io.Name))
+	}
+
 	sourceTyp := funcTyp.In(0)
 	if sourceTyp.Kind() != reflect.Ptr {
-		panic(fmt.Sprintf("Can not register %s on input object %s as the first argument of the function is not a pointer type", name, io.Name))
+		panic(fmt.Errorf("can not register %s on input object %s as the first argument of the function is not a pointer type", name, io.Name))
+	}
+
+	if funcTyp.NumOut() > 2 {
+		panic(fmt.Errorf("can not register field %v on %v as number of output parameters should be less than 2", name, io.Name))
 	}
 
 	io.Fields[name] = function
