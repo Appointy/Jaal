@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type Publisher struct {}
+type Publisher struct{}
 
 func NewPublisher() *Publisher {
 	return &Publisher{}
@@ -15,10 +15,10 @@ func NewPublisher() *Publisher {
 
 func (p *Publisher) WrapSourceEvent(name string, payload []byte) ([]byte, error) {
 	var data bytes.Buffer
-		evt := Event{
-			Typ: name,
-			Payload: payload,
-		}
+	evt := Event{
+		Type:    name,
+		Payload: payload,
+	}
 	if err := gob.NewEncoder(&data).Encode(evt); err != nil {
 		return nil, err
 	}
@@ -26,11 +26,11 @@ func (p *Publisher) WrapSourceEvent(name string, payload []byte) ([]byte, error)
 }
 
 type Event struct {
-	Typ string
+	Type    string
 	Payload []byte
 }
 
-func (e *Event) GetType() string { return e.Typ }
+func (e *Event) GetType() string { return e.Type }
 
 func (e *Event) GetPayload() []byte { return e.Payload }
 
@@ -97,10 +97,10 @@ func SourceEventListener() {
 		if err := gob.NewDecoder(bytes.NewReader(e)).Decode(&evt); err != nil {
 			panic("failed to decode subscription data")
 		}
-		if _, ok := SubTypeManager.SubTypeStreams[evt.Typ]; !ok {
+		if _, ok := SubTypeManager.SubTypeStreams[evt.Type]; !ok {
 			panic("invalid sub type in source event")
 		}
-		SubTypeManager.SubTypeStreams[evt.Typ] <- evt.Payload
+		SubTypeManager.SubTypeStreams[evt.Type] <- evt.Payload
 	}
 }
 
