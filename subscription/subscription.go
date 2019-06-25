@@ -1,23 +1,45 @@
-package jaal
+package subscription
 
 import (
-	"context"
+	"bytes"
+	"encoding/gob"
 	"fmt"
-	"reflect"
 	"sync"
-
-	"cloud.google.com/go/pubsub"
 )
 
-// Subscription is an interface implemented for source stream subscriptions
-type Subscription interface {
-	Receive(context.Context, func(context.Context, *pubsub.Message)) error
+type Publisher struct {}
+
+func NewPublisher() *Publisher {
+	return &Publisher{}
 }
+
+func (p *Publisher) WrapSourceEvent(name string, payload []byte) ([]byte, error) {
+	var data bytes.Buffer
+		evt := Event{
+			Typ: name,
+			Payload: payload,
+		}
+	if err := gob.NewEncoder(&data).Encode(evt); err != nil {
+		return nil, err
+	}
+	return data.Bytes(), nil
+}
+
+type Event struct {
+	Typ string
+	Payload []byte
+}
+
+func (e *Event) GetType() string { return e.Typ }
+
+func (e *Event) GetPayload() []byte { return e.Payload }
+
+var Source = make(chan []byte)
 
 // For each subscription type, a list of all connection channels to broadcast subscription type filtered source events
 type typeNotif struct {
-	Clients         map[string]chan interface{}
-	ServerTypeNotif chan chan interface{}
+	Clients         map[string]chan []byte
+	ServerTypeNotif chan chan []byte
 }
 
 type runtimeSubManager struct {
@@ -26,9 +48,7 @@ type runtimeSubManager struct {
 }
 
 type subTypeManager struct {
-	SubTypeStreams map[string]chan interface{}
-	SourceStream   chan interface{}
-	Resolvers      map[string]interface{}
+	SubTypeStreams map[string]chan []byte
 }
 
 // RuntimeSubManager stores all the connection streams for each subscription type
@@ -43,72 +63,44 @@ func init() {
 		&sync.RWMutex{},
 	}
 	SubTypeManager = subTypeManager{
-		make(map[string]chan interface{}),
-		make(chan interface{}),
-		make(map[string]interface{}),
+		make(map[string]chan []byte),
 	}
 }
 
 // RunSubscriptionServices launches all the daemons necessary for subscription implementation
-func RunSubscriptionServices(ctx context.Context, sub Subscription) {
+func RunSubscriptionServices() {
 	for k := range SubTypeManager.SubTypeStreams {
 		go AddClientDaemon(k)
 		go SourceSubTypeTrigger(k)
 	}
-	go SourceEventListener(ctx, sub)
+	go SourceEventListener()
 }
 
 // RegisterSubType - Call at the server before/after making a subscription field func
-func RegisterSubType(subType string, resolver interface{}) error {
-
-	if err := checkResolver(resolver); err != nil {
-		return err
-	}
+func RegisterSubType(subType string) error {
 	if _, ok := SubTypeManager.SubTypeStreams[subType]; ok {
-		return fmt.Errorf("Type already registered")
+		return fmt.Errorf("endpoint already registered")
 	}
-
-	SubTypeManager.Resolvers[subType] = resolver
-	SubTypeManager.SubTypeStreams[subType] = make(chan interface{}, 1)
+	SubTypeManager.SubTypeStreams[subType] = make(chan []byte)
 	RuntimeSubManager.Lock.Lock()
-	RuntimeSubManager.ServerTypeNotifs[subType] = &typeNotif{make(map[string]chan interface{}), make(chan chan interface{}, 1)}
+	RuntimeSubManager.ServerTypeNotifs[subType] = &typeNotif{make(map[string]chan []byte), make(chan chan []byte, 1)}
 	RuntimeSubManager.Lock.Unlock()
-	return nil
-}
-
-// Source event to subscription type event resolvers should be of type - func(anyType) anyType, error
-func checkResolver(f interface{}) error {
-	v := reflect.ValueOf(f)
-	if v.Kind() != reflect.Func {
-		return fmt.Errorf("Resolver should be of type func(anyType) (anyType, error)")
-	}
-	if v.Type().NumOut() != 2 {
-		return fmt.Errorf("Resolver should have only 2 return values")
-	}
-	errorType := reflect.TypeOf((*error)(nil)).Elem()
-	if v.Type().Out(1) != errorType {
-		return fmt.Errorf("Resolver's second return type should be error type")
-	}
+	fmt.Println("Registered", subType)
 	return nil
 }
 
 // SourceEventListener listens for a source event and sends it to the corresponding subscription type stream
-func SourceEventListener(ctx context.Context, sub Subscription) {
-	//-------------------For a Google PubSub subscription type----------------------------
-	if err := sub.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
-		for v, k := range SubTypeManager.Resolvers {
-			f := reflect.ValueOf(k)
-			fmt.Println("Calling resolver")
-			output := f.Call([]reflect.Value{reflect.ValueOf(m)})
-			if output[1].Interface() != nil {
-				continue
-			}
-			fmt.Println("Sent into", v, "stream")
-			SubTypeManager.SubTypeStreams[v] <- output[0].Interface()
+func SourceEventListener() {
+	for e := range Source {
+		fmt.Println("Got a source")
+		var evt Event
+		if err := gob.NewDecoder(bytes.NewReader(e)).Decode(&evt); err != nil {
+			panic("failed to decode subscription data")
 		}
-		m.Ack()
-	}); err != nil {
-		fmt.Println("Error in receiving PubSub message")
+		if _, ok := SubTypeManager.SubTypeStreams[evt.Typ]; !ok {
+			panic("invalid sub type in source event")
+		}
+		SubTypeManager.SubTypeStreams[evt.Typ] <- evt.Payload
 	}
 }
 
@@ -122,10 +114,9 @@ func AddClientDaemon(subType string) {
 		id := <-client
 		fmt.Println("Received:", id)
 		RuntimeSubManager.Lock.Lock()
-		RuntimeSubManager.ServerTypeNotifs[subType].Clients[id.(string)] = client
+		RuntimeSubManager.ServerTypeNotifs[subType].Clients[string(id)] = client
 		RuntimeSubManager.Lock.Unlock()
 		fmt.Println("stored client")
-
 	}
 }
 
@@ -144,7 +135,7 @@ func SourceSubTypeTrigger(subType string) {
 }
 
 // Delete the connection channel from storage
-func deleteEntries(id string, subType string) {
+func DeleteEntries(id string, subType string) {
 	RuntimeSubManager.Lock.Lock()
 	delete(RuntimeSubManager.ServerTypeNotifs[subType].Clients, id)
 	RuntimeSubManager.Lock.Unlock()

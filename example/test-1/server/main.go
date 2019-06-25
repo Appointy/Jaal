@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"math/rand"
 	"net/http"
-	"os"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -15,6 +15,7 @@ import (
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/introspection"
 	"go.appointy.com/jaal/schemabuilder"
+	"go.appointy.com/jaal/subscription"
 	"golang.org/x/net/context"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
@@ -108,50 +109,32 @@ func (s *server) registerSubscription(schema *schemabuilder.Schema) {
 	obj.FieldFunc("channelStream", func(source *schemabuilder.Subscription, args struct {
 		In channelStreamReq
 	}) *channel {
-		temp := source.Source.(sourceChannel)
-		if args.In.Name == (temp.FirstName + " " + temp.LastName) {
-			return &channel{
-				Id:    temp.Id,
-				Name:  temp.FirstName + " " + temp.LastName,
-				Email: temp.FirstName + "@appointy.com",
-			}
+		var ch channel
+		if err := gob.NewDecoder(bytes.NewReader(source.Payload)).Decode(&ch); err != nil {
+			panic(err)
+		}
+		if args.In.Name == ch.Name {
+			return &ch
 		}
 		return nil
 	})
 
-	if err := jaal.RegisterSubType("channelStream", func(source *pubsub.Message) (sourceChannel, error) {
-		var temp sourceChannel
-		if err := json.Unmarshal(source.Data, &temp); err != nil {
-			return sourceChannel{}, err
-		}
-		return temp, nil
-	}); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 	obj.FieldFunc("postStream", func(source *schemabuilder.Subscription, args struct {
 		In postStreamReq
 	}) *post {
-		temp := source.Source.(sourcePost)
-		if args.In.Tag == temp.Tag {
+		var p post
+		if err := gob.NewDecoder(bytes.NewReader(source.Payload)).Decode(&p); err != nil {
+			panic(err)
+		}
+		if args.In.Tag == p.Tag {
 			return &post{
 				Id:    idgen.New("post"),
-				Title: temp.Title,
-				Tag:   temp.Tag,
+				Title: p.Title,
+				Tag:   p.Tag,
 			}
 		}
 		return nil
 	})
-	if err := jaal.RegisterSubType("postStream", func(source *pubsub.Message) (sourcePost, error) {
-		var temp sourcePost
-		if err := json.Unmarshal(source.Data, &temp); err != nil {
-			return sourcePost{}, err
-		}
-		return temp, nil
-	}); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
 }
 
 // schema builds the graphql schema.
@@ -233,11 +216,9 @@ func main() {
 
 	schema := server.schema()
 	fmt.Println("built")
-	//jaal.runSubscriptionServices()
 	introspection.AddIntrospectionToSchema(schema)
-	http.Handle("/graphql", jaal.HTTPHandler(schema))
-	http.Handle("/graphql/sub", jaal.HTTPSubHandler(schema))
-
+	subscription.RunSubscriptionServices()
+	http.Handle("/graphql", jaal.HTTPSubHandler(schema))
 	ctx := context.Background()
 	s := pstest.NewServer()
 	defer s.Close()
@@ -265,44 +246,75 @@ func main() {
 		return
 	}
 
-	jaal.RunSubscriptionServices(ctx, sub)
-
 	fmt.Println("Running")
+	// Non-blocking receiver
+	go func() {
+		if err := sub.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
+			fmt.Println("Sending to source")
+			// Just have to pass the subscription event to the jaal.Source []byte channel.
+			subscription.Source <- m.Data
+			m.Ack()
+		}); err != nil {
+			fmt.Println("Error in receiving PubSub message")
+		}
+	}()
+
+	// Publisher
 	go func() {
 		for {
 			time.Sleep(2 * time.Second)
-			temp := sourceChannel{}
-			var temp2 sourcePost
+			var temp *channel
+			var temp2 *post
 			t := rand.Intn(100)
 			if t < 33 {
-				temp = sourceChannel{
+				temp = &channel{
 					Id:        idgen.New("src"),
-					FirstName: "Serial",
-					LastName:  "Killer",
+					Name: "Serial Killer",
+					Email: ":P",
 				}
 			} else if t >= 33 && t < 66 {
-				temp = sourceChannel{
+				temp = &channel{
 					Id:        idgen.New("src"),
-					FirstName: "Dirty",
-					LastName:  "Shoe",
+					Name: "Dirty Shoe",
+					Email:  "Assassin.Groot@Nonsense.home",
 				}
 			} else {
-				temp2 = sourcePost{
+				temp2 = &post{
 					Title: "Master of Skins",
 					Tag:   "Huer",
 				}
 			}
-			var data []byte
-			if (temp != sourceChannel{}) {
-				data, _ = json.Marshal(temp)
+			var data bytes.Buffer
+			p := subscription.NewPublisher()
+			if temp != nil {
+				if err := gob.NewEncoder(&data).Encode(*temp); err != nil {
+					panic(err)
+				}
+				d, err := p.WrapSourceEvent("channelStream", data.Bytes())
+				if err != nil {
+					panic(fmt.Errorf("failed to gob: %v", err))
+				}
+				top.Publish(ctx, &pubsub.Message{
+					Data: d,
+				});
+				fmt.Println("Published")
 			} else {
-				data, _ = json.Marshal(temp2)
+				if err := gob.NewEncoder(&data).Encode(*temp2); err != nil {
+					panic(err)
+				}
+				d, err := p.WrapSourceEvent("postStream", data.Bytes())
+				if err != nil {
+					panic(fmt.Errorf("failed to gob: %v", err))
+				}
+				top.Publish(ctx, &pubsub.Message{
+					Data: d,
+				})
+				fmt.Println("Published")
 			}
-			top.Publish(ctx, &pubsub.Message{
-				Data: data,
-			})
 		}
 	}()
 
-	http.ListenAndServe(":3000", nil)
+	if err := http.ListenAndServe(":3000", nil); err != nil {
+		fmt.Println(err)
+	}
 }

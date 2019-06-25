@@ -40,7 +40,7 @@ func main() {
 	}
 	header := make(http.Header)
 	header.Add("query", string(query))
-	u := url.URL{Scheme: "ws", Host: "localhost:3000", Path: "/graphql/sub"}
+	u := url.URL{Scheme: "ws", Host: "localhost:3000", Path: "/graphql"}
 	c, resp, err := websocket.DefaultDialer.Dial(u.String(), header)
 	if err != nil {
 		b, _ := ioutil.ReadAll(resp.Body)

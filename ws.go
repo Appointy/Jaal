@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/schemabuilder"
+	"go.appointy.com/jaal/subscription"
 )
 
 // HTTPSubHandler implements the handler required for executing the graphql subscriptions
@@ -21,11 +22,13 @@ func HTTPSubHandler(schema *graphql.Schema) http.Handler {
 			schema:   schema,
 			executor: &graphql.Executor{},
 		},
+		HTTPHandler(schema),
 	}
 }
 
 type httpSubHandler struct {
 	handler
+	qmHandler http.Handler
 }
 
 type endMessage struct{}
@@ -33,7 +36,11 @@ type endMessage struct{}
 var upgrader = websocket.Upgrader{}
 
 func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	getResponse := func(value interface{}, err error) []byte {
+	fmt.Println("started")
+	//s, _ := ioutil.ReadAll(r.Body)
+	//fmt.Println(r.URL.Query())
+	//fmt.Println(string(s))
+	var getResponse = func(value interface{}, err error) []byte {
 		response := httpResponse{}
 		if err != nil {
 			response.Errors = []string{err.Error()}
@@ -49,28 +56,35 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return responseJSON
 	}
 
-	fmt.Println("started")
+	//fmt.Println("Query: ", r.URL.Query().Get("query"))
+	//fmt.Println("Variables: ", r.URL.Query().Get("variables"))
 
-	if r.Header.Get("query") == "" {
-		res := getResponse(nil, errors.New("request must include a query"))
-		w.Write(res)
-		return
-	}
+	//if r.Header.Get("query") == "" {
+	//	res := getResponse(nil, errors.New("request must include a query"))
+	//	w.Write(res)
+	//	return
+	//}
+	q := r.URL.Query().Get("query")
 
-	var params httpPostBody
-	if err := json.NewDecoder(strings.NewReader(r.Header.Get("query"))).Decode(&params); err != nil {
+	var params map[string]interface{}
+
+	if err := json.NewDecoder(strings.NewReader(strings.Trim(r.URL.Query().Get("variables"), "\""))).Decode(&params); err != nil {
 		res := getResponse(nil, err)
 		w.Write(res)
+		fmt.Println("failed to gob:", err)
 		return
 	}
-
-	query, err := graphql.Parse(params.Query, params.Variables)
+	fmt.Println("parsed")
+	query, err := graphql.Parse(q, params)
 	if err != nil {
 		res := getResponse(nil, err)
 		w.Write(res)
 		return
 	}
-
+	if query.Kind != "Subscription" {
+		h.qmHandler.ServeHTTP(w, r)
+		return
+	}
 	subType := query.SelectionSet.Selections[0].Name
 
 	fmt.Println("parsed, subType:", subType)
@@ -87,7 +101,7 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		res := getResponse(nil, errors.New("could not establish websokcet connection"))
+		res := getResponse(nil, errors.New("could not establish websocket connection"))
 		fmt.Println(err)
 		w.Write(res)
 		return
@@ -97,11 +111,11 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	id := idgen.New("usr")
 	fmt.Println(id)
 
-	usrChannel := make(chan interface{})
-	RuntimeSubManager.Lock.RLock()
-	RuntimeSubManager.ServerTypeNotifs[subType].ServerTypeNotif <- usrChannel
-	RuntimeSubManager.Lock.RUnlock()
-	usrChannel <- id
+	usrChannel := make(chan []byte)
+	subscription.RuntimeSubManager.Lock.RLock()
+	subscription.RuntimeSubManager.ServerTypeNotifs[subType].ServerTypeNotif <- usrChannel
+	subscription.RuntimeSubManager.Lock.RUnlock()
+	usrChannel <- []byte(id)
 
 	// Client side unsubscribe/disconnect signal
 	var ext = make(chan int)
@@ -139,6 +153,6 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		}
 	}
-	deleteEntries(id, subType)
+	subscription.DeleteEntries(id, subType)
 	fmt.Printf("Client %v disconnected\n", id)
 }

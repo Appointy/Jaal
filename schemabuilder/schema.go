@@ -148,7 +148,7 @@ func (s *Schema) Mutation() *Object {
 }
 
 type Subscription struct {
-	Source interface{}
+	Payload []byte
 }
 
 // Subscription returns an Object struct that we can use to register all the top level

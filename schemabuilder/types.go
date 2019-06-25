@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
+	jaal "go.appointy.com/jaal/subscription"
 )
 
 //Object - an Object represents a Go type and set of methods to be converted into an Object in a GraphQL schema.
@@ -109,6 +110,11 @@ func (s *Object) FieldFunc(name string, f interface{}) {
 		panic("duplicate method")
 	}
 	s.Methods[name] = m
+	if s.Name == "Subscription" {
+		if err := jaal.RegisterSubType(name); err != nil {
+			panic(fmt.Errorf("internal error: %v", err))
+		}
+	}
 }
 
 // FieldFunc is used to expose the fields of an input object and determine the method to fill it
