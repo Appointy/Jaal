@@ -8,17 +8,16 @@ import (
 	"net/http"
 	"time"
 
-	"cloud.google.com/go/pubsub"
-	"cloud.google.com/go/pubsub/pstest"
+	"gocloud.dev/pubsub"
+	_ "gocloud.dev/pubsub/mempubsub"
 	"github.com/appointy/idgen"
 	"go.appointy.com/jaal"
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/introspection"
 	"go.appointy.com/jaal/schemabuilder"
-	"go.appointy.com/jaal/subscription"
 	"golang.org/x/net/context"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
+	//"google.golang.org/api/option"
+	//"google.golang.org/grpc"
 )
 
 type channel struct {
@@ -108,20 +107,20 @@ func (s *server) registerSubscription(schema *schemabuilder.Schema) {
 
 	obj.FieldFunc("channelStream", func(source *schemabuilder.Subscription, args struct {
 		In channelStreamReq
-	}) *channel {
+	}) (*channel, error) {
 		var ch channel
 		if err := gob.NewDecoder(bytes.NewReader(source.Payload)).Decode(&ch); err != nil {
 			panic(err)
 		}
 		if args.In.Name == ch.Name {
-			return &ch
+			return &ch, nil
 		}
-		return nil
+		return nil, graphql.ErrNoUpdate
 	})
 
 	obj.FieldFunc("postStream", func(source *schemabuilder.Subscription, args struct {
 		In postStreamReq
-	}) *post {
+	}) (*post, error) {
 		var p post
 		if err := gob.NewDecoder(bytes.NewReader(source.Payload)).Decode(&p); err != nil {
 			panic(err)
@@ -131,9 +130,9 @@ func (s *server) registerSubscription(schema *schemabuilder.Schema) {
 				Id:    idgen.New("post"),
 				Title: p.Title,
 				Tag:   p.Tag,
-			}
+			}, nil
 		}
-		return nil
+		return nil, graphql.ErrNoUpdate
 	})
 }
 
@@ -217,47 +216,20 @@ func main() {
 	schema := server.schema()
 	fmt.Println("built")
 	introspection.AddIntrospectionToSchema(schema)
-	subscription.RunSubscriptionServices()
-	http.Handle("/graphql", jaal.HTTPSubHandler(schema))
 	ctx := context.Background()
-	s := pstest.NewServer()
-	defer s.Close()
-	conn, err := grpc.Dial(s.Addr, grpc.WithInsecure())
+	top, err := pubsub.OpenTopic(ctx, "mem://topicA")
 	if err != nil {
-		fmt.Println("failed to create server")
+		fmt.Println(err)
 	}
-	defer conn.Close()
-	cli, err := pubsub.NewClient(ctx, "some-project", option.WithGRPCConn(conn))
+	defer top.Shutdown(ctx)
+	sub, err := pubsub.OpenSubscription(ctx, "mem://topicA")
 	if err != nil {
-		fmt.Println("failed to create client:", err)
-		return
+		fmt.Println(err)
 	}
-	top, err := cli.CreateTopic(ctx, "topName")
-	if err != nil {
-		fmt.Println("failed to create topic:", err)
-		return
-	}
-	sub, err := cli.CreateSubscription(ctx, "subName", pubsub.SubscriptionConfig{
-		Topic:       top,
-		AckDeadline: 10 * time.Second,
-	})
-	if err != nil {
-		fmt.Println("failed to create subscription:", err)
-		return
-	}
-
+	defer sub.Shutdown(ctx)
+	//handler, f := jaal.HTTPSubHandler(schema, sub)
+	http.Handle("/graphql", jaal.HTTPHandler(schema))
 	fmt.Println("Running")
-	// Non-blocking receiver
-	go func() {
-		if err := sub.Receive(ctx, func(ctx context.Context, m *pubsub.Message) {
-			fmt.Println("Sending to source")
-			// Just have to pass the subscription event to the jaal.Source []byte channel.
-			subscription.Source <- m.Data
-			m.Ack()
-		}); err != nil {
-			fmt.Println("Error in receiving PubSub message")
-		}
-	}()
 
 	// Publisher
 	go func() {
@@ -285,36 +257,35 @@ func main() {
 				}
 			}
 			var data bytes.Buffer
-			p := subscription.NewPublisher()
 			if temp != nil {
 				if err := gob.NewEncoder(&data).Encode(*temp); err != nil {
 					panic(err)
 				}
-				d, err := p.WrapSourceEvent("channelStream", data.Bytes())
-				if err != nil {
-					panic(fmt.Errorf("failed to gob: %v", err))
+				if err := top.Send(ctx, &pubsub.Message{
+					Body: data.Bytes(),
+					Metadata: map[string]string{"type":"channelStream"},
+				}); err != nil {
+					fmt.Println(err)
+					return
 				}
-				top.Publish(ctx, &pubsub.Message{
-					Data: d,
-				});
 				fmt.Println("Published")
 			} else {
 				if err := gob.NewEncoder(&data).Encode(*temp2); err != nil {
 					panic(err)
 				}
-				d, err := p.WrapSourceEvent("postStream", data.Bytes())
-				if err != nil {
-					panic(fmt.Errorf("failed to gob: %v", err))
+				if err := top.Send(ctx, &pubsub.Message{
+					Body: data.Bytes(),
+					Metadata: map[string]string{"type":"postStream"},
+				}); err != nil {
+					fmt.Println(err)
+					return
 				}
-				top.Publish(ctx, &pubsub.Message{
-					Data: d,
-				})
 				fmt.Println("Published")
 			}
 		}
 	}()
-
-	if err := http.ListenAndServe(":3000", nil); err != nil {
+	f()
+	if err := http.ListenAndServe(":8081", nil); err != nil {
 		fmt.Println(err)
 	}
 }
