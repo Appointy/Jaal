@@ -8,16 +8,14 @@ import (
 	"net/http"
 	"time"
 
-	"gocloud.dev/pubsub"
-	_ "gocloud.dev/pubsub/mempubsub"
 	"github.com/appointy/idgen"
 	"go.appointy.com/jaal"
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/introspection"
 	"go.appointy.com/jaal/schemabuilder"
+	"gocloud.dev/pubsub"
+	_ "gocloud.dev/pubsub/mempubsub"
 	"golang.org/x/net/context"
-	//"google.golang.org/api/option"
-	//"google.golang.org/grpc"
 )
 
 type channel struct {
@@ -191,7 +189,6 @@ func (s *server) schema() *graphql.Schema {
 		in.Tag = *tag
 	})
 
-	fmt.Println("objects")
 	s.registerQuery(builder)
 	s.registerMutation(builder)
 	s.registerSubscription(builder)
@@ -214,7 +211,6 @@ func main() {
 	fmt.Println(server)
 
 	schema := server.schema()
-	fmt.Println("built")
 	introspection.AddIntrospectionToSchema(schema)
 	ctx := context.Background()
 	top, err := pubsub.OpenTopic(ctx, "mem://topicA")
@@ -227,9 +223,9 @@ func main() {
 		fmt.Println(err)
 	}
 	defer sub.Shutdown(ctx)
-	//handler, f := jaal.HTTPSubHandler(schema, sub)
-	http.Handle("/graphql", jaal.HTTPHandler(schema))
-	fmt.Println("Running")
+	handler, f := jaal.HTTPSubHandler(schema, sub)
+	http.Handle("/graphql", handler)
+	fmt.Println("Running...")
 
 	// Publisher
 	go func() {
@@ -240,15 +236,15 @@ func main() {
 			t := rand.Intn(100)
 			if t < 33 {
 				temp = &channel{
-					Id:        idgen.New("src"),
-					Name: "Serial Killer",
+					Id:    idgen.New("src"),
+					Name:  "Serial Killer",
 					Email: ":P",
 				}
 			} else if t >= 33 && t < 66 {
 				temp = &channel{
-					Id:        idgen.New("src"),
-					Name: "Dirty Shoe",
-					Email:  "Assassin.Groot@Nonsense.home",
+					Id:    idgen.New("src"),
+					Name:  "Dirty Shoe",
+					Email: "Assassin.Groot@Nonsense.home",
 				}
 			} else {
 				temp2 = &post{
@@ -262,25 +258,23 @@ func main() {
 					panic(err)
 				}
 				if err := top.Send(ctx, &pubsub.Message{
-					Body: data.Bytes(),
-					Metadata: map[string]string{"type":"channelStream"},
+					Body:     data.Bytes(),
+					Metadata: map[string]string{"type": "channelStream"},
 				}); err != nil {
 					fmt.Println(err)
 					return
 				}
-				fmt.Println("Published")
 			} else {
 				if err := gob.NewEncoder(&data).Encode(*temp2); err != nil {
 					panic(err)
 				}
 				if err := top.Send(ctx, &pubsub.Message{
-					Body: data.Bytes(),
-					Metadata: map[string]string{"type":"postStream"},
+					Body:     data.Bytes(),
+					Metadata: map[string]string{"type": "postStream"},
 				}); err != nil {
 					fmt.Println(err)
 					return
 				}
-				fmt.Println("Published")
 			}
 		}
 	}()

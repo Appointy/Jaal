@@ -23,6 +23,8 @@ type ComputationInput struct {
 type Executor struct {
 }
 
+var ErrNoUpdate = errors.New("no update")
+
 func (e *Executor) Execute(ctx context.Context, typ Type, source interface{}, query *Query) (interface{}, error) {
 	return e.execute(ctx, typ, source, query.SelectionSet)
 }
@@ -104,6 +106,9 @@ func (e *Executor) executeUnion(ctx context.Context, typ *Union, source interfac
 			}
 			resolved, err := e.executeObject(ctx, graphqlTyp, inner.Interface(), fragment.Fragment.SelectionSet)
 			if err != nil {
+				if err == ErrNoUpdate {
+					return nil, err
+				}
 				return nil, fmt.Errorf("%v - %v", typString, err)
 			}
 
@@ -136,6 +141,9 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 	// for every selection, resolve the value and store it in the output object
 	for _, selection := range selections {
 		if ok, err := shouldIncludeNode(selection.Directives); err != nil {
+			if err == ErrNoUpdate {
+				return nil, err
+			}
 			return nil, fmt.Errorf("%s - %s", selection.Alias, err)
 		} else if !ok {
 			continue
@@ -149,6 +157,9 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 		field := typ.Fields[selection.Name]
 		resolved, err := e.resolveAndExecute(ctx, field, source, selection)
 		if err != nil {
+			if err == ErrNoUpdate {
+				return nil, err
+			}
 			return nil, fmt.Errorf("%v - %v", selection.Alias, err)
 		}
 		fields[selection.Alias] = resolved
@@ -202,6 +213,9 @@ func (e *Executor) executeList(ctx context.Context, typ *List, source interface{
 		value := slice.Index(i)
 		resolved, err := e.execute(ctx, typ.Type, value.Interface(), selectionSet)
 		if err != nil {
+			if err == ErrNoUpdate {
+				return nil, err
+			}
 			return nil, fmt.Errorf("%v - %v", fmt.Sprint(i), err)
 		}
 		items[i] = resolved
@@ -246,6 +260,9 @@ func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source 
 			value = value.FieldByName(typString)
 			resolved, err := e.resolveAndExecute(ctx, field, value.Interface(), selection)
 			if err != nil {
+				if err == ErrNoUpdate {
+					return nil, err
+				}
 				return nil, fmt.Errorf("%s - %s", selection.Alias, err)
 			}
 			fields[selection.Alias] = resolved
