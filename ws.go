@@ -192,13 +192,17 @@ loop:
 					if err := h.serveHTTP(conn, *data, schema, query, end, w, r); err != nil {
 						fmt.Println("Id:", data.Id, ": terminated: ", err)
 					}
+					h.sessions.RLock()
+					if _, ok := h.sessions.data[data.Id]; ok {
+						if err := writeResponse(conn, "complete", data.Id, nil, nil); err != nil {
+							fmt.Println(err)
+						}
+					}
+					h.sessions.RUnlock()
 					h.sessions.Lock()
 					delete(h.sessions.data, data.Id)
 					delete(h.sessions.chans, data.Id)
 					h.sessions.Unlock()
-					if err := writeResponse(conn, "complete", data.Id, nil, nil); err != nil {
-						fmt.Println(err)
-					}
 				}(conn, &data, schema, modQuery, end, w, r)
 			}
 		case "stop":
