@@ -10,6 +10,10 @@ function App() {
           postStream(in: {tag: "Huer"}) {
             title
           }
+          channelStream(in: {name: "Serial Killer"}) {
+            email
+            name
+          }
       }`,
     variables: {}
   }).subscribe({

@@ -229,7 +229,9 @@ func main() {
 
 	// Publisher
 	go func() {
+		i := 0
 		for {
+			i++
 			time.Sleep(2 * time.Second)
 			var temp *channel
 			var temp2 *post
@@ -275,6 +277,9 @@ func main() {
 					fmt.Println(err)
 					return
 				}
+			}
+			if i > 4 {
+				sub.Shutdown(ctx)
 			}
 		}
 	}()
