@@ -278,7 +278,7 @@ func main() {
 					return
 				}
 			}
-			if i > 4 {
+			if t < 10 {
 				sub.Shutdown(ctx)
 			}
 		}
