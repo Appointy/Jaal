@@ -131,14 +131,12 @@ func (s *Schema) InputObject(name string, typ interface{}) *InputObject {
 	return inputObject
 }
 
-//Query respresents the root Query object of GraphQL Schema. All the query
-// fields are registered on this object.
-type Query struct{}
+type query struct{}
 
 // Query returns an Object struct that we can use to register all the top level
 // graphql query functions we'd like to expose.
 func (s *Schema) Query() *Object {
-	return s.Object("Query", Query{})
+	return s.Object("Query", query{})
 }
 
 type mutation struct{}
@@ -187,7 +185,7 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 		sb.inputObjects[typ] = inputObject
 	}
 
-	queryTyp, err := sb.getType(reflect.TypeOf(&Query{}))
+	queryTyp, err := sb.getType(reflect.TypeOf(&query{}))
 	if err != nil {
 		return nil, err
 	}
