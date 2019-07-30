@@ -1,6 +1,7 @@
 package schemabuilder
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -128,7 +129,7 @@ func (s *Object) FieldFunc(name string, f interface{}) {
 func (io *InputObject) FieldFunc(name string, function interface{}) {
 	funcTyp := reflect.TypeOf(function)
 
-	if funcTyp.NumIn() != 2{
+	if funcTyp.NumIn() != 2 {
 		panic(fmt.Errorf("can not register field %v on %v as number of input argument should be 2", name, io.Name))
 	}
 
@@ -260,7 +261,8 @@ type Map struct {
 
 // MarshalJSON implements JSON Marshalling used to generate the output
 func (m Map) MarshalJSON() ([]byte, error) {
-	return []byte(m.Value), nil
+	v := base64.StdEncoding.EncodeToString([]byte(m.Value))
+	return []byte(v), nil
 }
 
 //Duration handles the duration
