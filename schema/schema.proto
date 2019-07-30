@@ -8,24 +8,33 @@ import "google/protobuf/descriptor.proto";
 option go_package="go.appointy.com/jaal/schema";
 
 extend google.protobuf.MethodOptions {
+    // schema is used to tag an rpc as query or mutation.
     MethodOptions schema = 91111;
 }
 
 extend google.protobuf.MessageOptions{
+    // skip is used to skip the registration of a message on the graphql schema.
     bool skip = 91112;
+    // name is used to change default name of message on graphql schema.
+    string name = 91114;
+    // type is used to change go type of the message in the gq file.
+    string type = 91117;
 }
 
 extend google.protobuf.FileOptions{
+    // file_skip is used to skip the generation of gq file.
     bool file_skip = 91113;
 }
 
-extend google.protobuf.MessageOptions{
-    string name = 91114;
-}
-
 extend google.protobuf.FieldOptions{
+    // input_skip is used to skip the registration of the field on input object.
     bool input_skip = 91115;
+    // payload_skip is used to skip the registration of the field on payload object.
     bool payload_skip = 91116;
+    // id is used to expose the field as graphQL ID. Only string field can be tagged with this option.
+    bool id = 91120;
+    // field_name is used to change the default name of field on graphql schema.
+    string field_name = 91121;
 }
 
 message MethodOptions {
