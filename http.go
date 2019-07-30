@@ -6,13 +6,14 @@ import (
 	"net/http"
 
 	"go.appointy.com/jaal/graphql"
+	localepb "go.appointy.com/waqt/locale/pb"
 )
 
 //HTTPHandler implements the handler required for executing the graphql queries
-func HTTPHandler(schema *graphql.Schema) http.Handler {
+func HTTPHandler(schema *graphql.Schema, locale localepb.LocaleClient) http.Handler {
 	return &httpHandler{
 		schema:   schema,
-		executor: &graphql.Executor{},
+		executor: graphql.NewExecutor(locale),
 	}
 }
 
