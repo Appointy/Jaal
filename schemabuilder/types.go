@@ -262,7 +262,11 @@ type Map struct {
 // MarshalJSON implements JSON Marshalling used to generate the output
 func (m Map) MarshalJSON() ([]byte, error) {
 	v := base64.StdEncoding.EncodeToString([]byte(m.Value))
-	return []byte(v), nil
+	d, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	return d, nil
 }
 
 //Duration handles the duration
