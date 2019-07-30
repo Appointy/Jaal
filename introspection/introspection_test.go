@@ -248,6 +248,10 @@ func TestIntrospectionForInterface(t *testing.T) {
 						map[string]interface{}{
 							"name": "skip",
 						},
+
+						map[string]interface{}{
+							"name": "locale",
+						},
 					},
 				},
 			},
@@ -870,6 +874,30 @@ func TestIntrospectionForInterface(t *testing.T) {
 									"defaultValue": nil,
 									"type": map[string]interface{}{
 										"name":          "Boolean",
+										"kind":          "SCALAR",
+										"description":   "",
+										"fields":        []interface{}{},
+										"interfaces":    []interface{}{},
+										"possibleTypes": []interface{}{},
+										"enumValues":    []interface{}{},
+										"inputFields":   []interface{}{},
+									},
+								},
+							},
+						},
+						map[string]interface{}{
+							"name":        "locale",
+							"description": "Directs the executor to convert a string field in language specified by `lang` argument.",
+							"locations": []interface{}{
+								"FIELD",
+							},
+							"args": []interface{}{
+								map[string]interface{}{
+									"name":         "lang",
+									"description":  "Specifies language to be converted in.",
+									"defaultValue": nil,
+									"type": map[string]interface{}{
+										"name":          "String",
 										"kind":          "SCALAR",
 										"description":   "",
 										"fields":        []interface{}{},
