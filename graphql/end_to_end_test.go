@@ -6,12 +6,11 @@ import (
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
+
 	"github.com/stretchr/testify/assert"
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/internal"
 	"go.appointy.com/jaal/schemabuilder"
-	"go.appointy.com/waqt/locale"
-	localepb "go.appointy.com/waqt/locale/pb"
 )
 
 func TestInterface(t *testing.T) {
@@ -416,111 +415,6 @@ func TestSkipDirectives(t *testing.T) {
 		t.Errorf("expected no err, received %s", err.Error())
 	}
 	if d := pretty.Compare(result, internal.ParseJSON(`{"value": "s"}`)); d != "" {
-		t.Errorf("unexpected diff: %s", d)
-	}
-}
-
-func TestLocaleDirective(t *testing.T) {
-	type object struct{}
-
-	schema := schemabuilder.NewSchema()
-
-	query := schema.Query()
-	query.FieldFunc("string", func() string { return "hello" })
-	query.FieldFunc("number", func() int32 { return 10 })
-	query.FieldFunc("object", func(ctx context.Context) object {
-		return object{}
-	})
-
-	payload := schema.Object("Struct", object{})
-	payload.FieldFunc("string", func() string { return "hello" })
-	payload.FieldFunc("number", func() int32 { return 10 })
-
-	builtSchema := schema.MustBuild()
-
-	execute := func(queryString string, vars map[string]interface{}) (interface{}, error) {
-		q, err := graphql.Parse(queryString, vars)
-		if err != nil {
-			panic(err)
-		}
-
-		if err := graphql.ValidateQuery(context.Background(), builtSchema.Query, q.SelectionSet); err != nil {
-			return nil, err
-		}
-
-		e := graphql.NewExecutor(localepb.NewLocalLocaleClient(locale.NewLocaleServer()))
-		return e.Execute(context.Background(), builtSchema.Query, nil, q)
-	}
-
-	//Check inputs
-	result, err := execute(`
-		query x {
-			string @locale(lang: $var)
-		}`, map[string]interface{}{"var": "hi"})
-	if err != nil {
-		t.Errorf("expected no err, received %s", err.Error())
-	}
-	if d := pretty.Compare(result, internal.ParseJSON(`{"string": "hello"}`)); d == "" {
-		t.Errorf("no difference in strings")
-	}
-
-	result, err = execute(`
-		query x {
-			string @locale(lang: $var)
-		}`, map[string]interface{}{"var": "en"})
-	if err != nil {
-		t.Errorf("expected no err, received %s", err.Error())
-	}
-	if d := pretty.Compare(result, internal.ParseJSON(`{"string": "hello"}`)); d != "" {
-		t.Errorf("unexpected diff: %s", d)
-	}
-
-	result, err = execute(`
-		query x {
-			number @locale(lang: $var)
-		}`, map[string]interface{}{"var": "en"})
-	if err != nil {
-		t.Errorf("expected no err, received %s", err.Error())
-	}
-	if d := pretty.Compare(result, internal.ParseJSON(`{"number": 10}`)); d != "" {
-		t.Errorf("unexpected diff: %s", d)
-	}
-
-	//Wrong type
-	result, err = execute(`
-		query x {
-			string @locale(lang: $var)
-		}`, map[string]interface{}{"var": 5})
-	if err == nil {
-		t.Errorf("expected err, received nil")
-	}
-	if !strings.Contains(err.Error(), "expected type String, found 5") {
-		t.Errorf("expected err, received: %s", err.Error())
-	}
-
-	// Missing lang
-	result, err = execute(`
-		query x {
-			string @locale
-		}`, nil)
-	if err == nil {
-		t.Errorf("expected err, received nil")
-	}
-	if !strings.Contains(err.Error(), "required argument not provided: lang") {
-		t.Errorf("expected err, received: %s", err.Error())
-	}
-
-	//On object
-	result, err = execute(`
-		query x {
-			object @locale(lang: $var){
-				string
-			}
-		}`, map[string]interface{}{"var": "en"})
-	if err != nil {
-		t.Errorf("expected no err, received %s", err.Error())
-	}
-	if d := pretty.Compare(result, internal.ParseJSON(`{"object":{"string": "hello"}}`)); d != "" {
 		t.Errorf("unexpected diff: %s", d)
 	}
 }

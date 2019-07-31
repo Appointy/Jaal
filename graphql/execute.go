@@ -7,8 +7,6 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-
-	localepb "go.appointy.com/waqt/locale/pb"
 )
 
 type ComputationInput struct {
@@ -23,11 +21,6 @@ type ComputationInput struct {
 }
 
 type Executor struct {
-	locale localepb.LocaleClient
-}
-
-func NewExecutor(locale localepb.LocaleClient) *Executor {
-	return &Executor{locale: locale}
 }
 
 func (e *Executor) Execute(ctx context.Context, typ Type, source interface{}, query *Query) (interface{}, error) {
@@ -158,12 +151,6 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 		if err != nil {
 			return nil, fmt.Errorf("%v - %v", selection.Alias, err)
 		}
-
-		resolved, err = e.applyLocale(ctx, resolved, field.Type, selection.Directives)
-		if err != nil {
-			return nil, fmt.Errorf("%s - %s", selection.Alias, err)
-		}
-
 		fields[selection.Alias] = resolved
 	}
 
@@ -310,58 +297,4 @@ func shouldIncludeNode(directives []*Directive) (bool, error) {
 	}
 
 	return true, nil
-}
-
-func (e *Executor) applyLocale(ctx context.Context, resolved interface{}, typ Type, directives []*Directive) (interface{}, error) {
-	parseLang := func(d *Directive) (string, error) {
-		args := d.Args.(map[string]interface{})
-		if args["lang"] == nil {
-			return "", fmt.Errorf("required argument not provided: lang")
-		}
-
-		if _, ok := args["lang"].(string); !ok {
-			return "", fmt.Errorf("expected type String, found %v", args["lang"])
-		}
-
-		return args["lang"].(string), nil
-	}
-
-	scalar, ok := typ.(*Scalar)
-	if !ok {
-		nonNull, ok := typ.(*NonNull)
-		if !ok {
-			return resolved, nil
-		}
-
-		scalar, ok = nonNull.Type.(*Scalar)
-		if !ok {
-			return resolved, nil
-		}
-	}
-
-	if scalar.Type != "String" {
-		return resolved, nil
-	}
-
-	payload, ok := resolved.(string)
-	if !ok {
-		return resolved, nil
-	}
-
-	localeDirective := findDirectiveWithName(directives, "locale")
-	if localeDirective == nil {
-		return resolved, nil
-	}
-
-	language, err := parseLang(localeDirective)
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := e.locale.Convert(ctx, &localepb.ConvertRequest{Language: language, Payload: payload})
-	if err != nil {
-		return nil, err
-	}
-
-	return response.Payload, nil
 }

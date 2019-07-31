@@ -23,7 +23,7 @@ func testHTTPRequest(req *http.Request) *httptest.ResponseRecorder {
 	builtSchema := schema.MustBuild()
 
 	rr := httptest.NewRecorder()
-	handler := jaal.HTTPHandler(builtSchema, nil)
+	handler := jaal.HTTPHandler(builtSchema)
 
 	handler.ServeHTTP(rr, req)
 	return rr
