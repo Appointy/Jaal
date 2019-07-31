@@ -487,21 +487,6 @@ var skipDirective = Directive{
 	},
 }
 
-var localeDirective = Directive{
-	Description: "Directs the executor to convert a string field in language specified by `lang` argument.",
-	Locations: []DirectiveLocation{
-		FIELD,
-	},
-	Name: "locale",
-	Args: []InputValue{
-		InputValue{
-			Name:        "lang",
-			Type:        Type{Inner: &graphql.Scalar{Type: "String"}},
-			Description: "Specifies language to be converted in.",
-		},
-	},
-}
-
 func (s *introspection) registerQuery(schema *schemabuilder.Schema) {
 	object := schema.Query()
 
@@ -517,7 +502,7 @@ func (s *introspection) registerQuery(schema *schemabuilder.Schema) {
 			Types:        types,
 			QueryType:    &Type{Inner: s.query},
 			MutationType: &Type{Inner: s.mutation},
-			Directives:   []Directive{includeDirective, skipDirective, localeDirective},
+			Directives:   []Directive{includeDirective, skipDirective},
 		}
 	})
 
