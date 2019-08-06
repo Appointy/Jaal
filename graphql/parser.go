@@ -10,6 +10,7 @@ import (
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
+	"go.appointy.com/jaal/internal"
 )
 
 type Query struct {
@@ -476,7 +477,7 @@ func Flatten(selectionSet *SelectionSet) ([]*Selection, error) {
 		}
 		for _, fragment := range selectionSet.Fragments {
 			if ok, err := shouldIncludeNode(fragment.Directives); err != nil {
-				return fmt.Errorf("%s - %s", fragment.Fragment.Name, err)
+				return internal.NestErrorPaths(err, fragment.Fragment.Name)
 
 			} else if !ok {
 				continue
