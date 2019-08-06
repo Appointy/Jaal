@@ -8,15 +8,19 @@ import (
 // Error represents the error returned by server in response
 type Error struct {
 	Message    string     `json:"message"`
-	Extensions *extension `json:"extensions"`
+	Extensions *Extension `json:"extensions"`
 	Paths      []string   `json:"paths"`
 }
 
-type extension struct {
+type Extension struct {
 	Code string `json:"code"`
 }
 
 func (e *Error) Error() string {
+	if e == nil {
+		return ""
+	}
+
 	return e.Message
 }
 
@@ -26,7 +30,7 @@ func NestErrorPaths(e error, path string) error {
 
 	newError := &Error{
 		Paths: []string{path},
-		Extensions: &extension{
+		Extensions: &Extension{
 			Code: err.Extensions.Code,
 		},
 		Message: err.Message,
@@ -44,7 +48,7 @@ func ConvertError(e error) *Error {
 		if statusError {
 			return &Error{
 				Paths: []string{},
-				Extensions: &extension{
+				Extensions: &Extension{
 					Code: codeErr.Code().String(),
 				},
 				Message: codeErr.Message(),
@@ -53,7 +57,7 @@ func ConvertError(e error) *Error {
 
 		return &Error{
 			Paths: []string{},
-			Extensions: &extension{
+			Extensions: &Extension{
 				Code: codes.Unknown.String(),
 			},
 			Message: e.Error(),
