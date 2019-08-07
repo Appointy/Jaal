@@ -14,8 +14,6 @@ import (
 	"go.appointy.com/jaal"
 	"go.appointy.com/jaal/introspection"
 	"go.appointy.com/jaal/schemabuilder"
-	"go.appointy.com/waqt/locale"
-	localepb "go.appointy.com/waqt/locale/pb"
 )
 
 func init() {
@@ -184,7 +182,7 @@ func main() {
 
 	introspection.AddIntrospectionToSchema(schema)
 
-	http.Handle("/graphql", jaal.HTTPHandler(schema, localepb.NewLocalLocaleClient(locale.NewLocaleServer())))
+	http.Handle("/graphql", jaal.HTTPHandler(schema))
 	log.Println("Running")
 	if err := http.ListenAndServe(":9000", nil); err != nil {
 		panic(err)
