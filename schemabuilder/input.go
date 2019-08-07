@@ -155,9 +155,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -169,9 +169,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -183,9 +183,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -197,9 +197,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -211,9 +211,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -225,9 +225,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -239,9 +239,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -253,9 +253,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -267,9 +267,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -281,9 +281,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asFloat = 0
-				}else {
+				} else {
 					return errors.New("not a number")
 				}
 			}
@@ -295,9 +295,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asString, ok := value.(string)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					asString = ""
-				}else {
+				} else {
 					return errors.New("not a string")
 				}
 			}
@@ -309,9 +309,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					v = ""
-				}else {
+				} else {
 					return errors.New("not a string")
 				}
 			}
@@ -324,9 +324,9 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				if value == nil{
+				if value == nil {
 					v = ""
-				}else {
+				} else {
 					return errors.New("not a string")
 				}
 			}
