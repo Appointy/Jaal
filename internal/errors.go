@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
@@ -12,6 +11,7 @@ type Error struct {
 	Paths      []string   `json:"paths"`
 }
 
+// Extension contains extra fields in the error
 type Extension struct {
 	Code string `json:"code"`
 }
@@ -44,23 +44,14 @@ func NestErrorPaths(e error, path string) error {
 func ConvertError(e error) *Error {
 	err, ok := (e).(*Error)
 	if !ok {
-		codeErr, statusError := status.FromError(err)
-		if statusError {
-			return &Error{
-				Paths: []string{},
-				Extensions: &Extension{
-					Code: codeErr.Code().String(),
-				},
-				Message: codeErr.Message(),
-			}
-		}
+		codeErr := status.Convert(e)
 
 		return &Error{
 			Paths: []string{},
 			Extensions: &Extension{
-				Code: codes.Unknown.String(),
+				Code: codeErr.Code().String(),
 			},
-			Message: e.Error(),
+			Message: codeErr.Message(),
 		}
 	}
 
