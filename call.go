@@ -21,7 +21,7 @@ func HttpCall(url, query string, variables map[string]interface{}, headers map[s
 	)
 
 	client := http.Client{
-		Timeout: time.Duration(50 * time.Second),
+		Timeout: time.Duration(500 * time.Second),
 	}
 
 	requestData, err := json.Marshal(requestBody)
