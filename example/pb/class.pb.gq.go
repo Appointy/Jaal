@@ -2,8 +2,8 @@
 package pb
 
 import "github.com/golang/protobuf/ptypes/timestamp"
-import "github.com/golang/protobuf/ptypes/duration"
 import "google.golang.org/genproto/protobuf/field_mask"
+import "github.com/golang/protobuf/ptypes/duration"
 import "context"
 import "encoding/json"
 import "encoding/base64"
@@ -92,8 +92,8 @@ func RegisterInputClass(schema *schemabuilder.Schema) {
 	input.FieldFunc("isDeleted", func(target *Class, source *bool) {
 		target.IsDeleted = *source
 	})
-	input.FieldFunc("type", func(target *Class, source *ClassType) {
-		target.Type = *source
+	input.FieldFunc("type", func(target *Class, source ClassType) {
+		target.Type = source
 	})
 	input.FieldFunc("instructors", func(target *Class, source []*ServiceProvider) {
 		target.Instructors = source
@@ -104,9 +104,10 @@ func RegisterInputClass(schema *schemabuilder.Schema) {
 	input.FieldFunc("startDate", func(target *Class, source *schemabuilder.Timestamp) {
 		target.StartDate = (*timestamp.Timestamp)(source)
 	})
-	input.FieldFunc("duration", func(target *Class, source *duration.Duration) {
-		target.Duration = source
+	input.FieldFunc("duration", func(target *Class, source *schemabuilder.Duration) {
+		target.Duration = (*duration.Duration)(source)
 	})
+
 }
 
 func RegisterInputValue(schema *schemabuilder.Schema) {
@@ -118,6 +119,7 @@ func RegisterInputValue(schema *schemabuilder.Schema) {
 	input.FieldFunc("game", func(target *Value, source *string) {
 		target.Game = *source
 	})
+
 }
 
 func RegisterInputCreateClassReq(schema *schemabuilder.Schema) {
@@ -129,6 +131,7 @@ func RegisterInputCreateClassReq(schema *schemabuilder.Schema) {
 	input.FieldFunc("class", func(target *CreateClassReq, source *Class) {
 		target.Class = source
 	})
+
 }
 
 func RegisterInputGetClassReq(schema *schemabuilder.Schema) {
@@ -138,8 +141,9 @@ func RegisterInputGetClassReq(schema *schemabuilder.Schema) {
 		target.Id = source.Value
 	})
 	input.FieldFunc("viewMask", func(target *GetClassReq, source *field_mask.FieldMask) {
-		target.ViewMask = source
+		target.ViewMask = gtypes.ModifyFieldMask(source)
 	})
+
 }
 
 func RegisterInputServiceProvider(schema *schemabuilder.Schema) {
@@ -151,6 +155,7 @@ func RegisterInputServiceProvider(schema *schemabuilder.Schema) {
 	input.FieldFunc("firstName", func(target *ServiceProvider, source *string) {
 		target.FirstName = *source
 	})
+
 }
 
 func RegisterPayloadClass(schema *schemabuilder.Schema) {
@@ -206,9 +211,10 @@ func RegisterPayloadClass(schema *schemabuilder.Schema) {
 	payload.FieldFunc("startDate", func(ctx context.Context, in *Class) *schemabuilder.Timestamp {
 		return (*schemabuilder.Timestamp)(in.StartDate)
 	})
-	payload.FieldFunc("duration", func(ctx context.Context, in *Class) *duration.Duration {
-		return in.Duration
+	payload.FieldFunc("duration", func(ctx context.Context, in *Class) *schemabuilder.Duration {
+		return (*schemabuilder.Duration)(in.Duration)
 	})
+
 }
 
 func RegisterPayloadValue(schema *schemabuilder.Schema) {
@@ -220,6 +226,7 @@ func RegisterPayloadValue(schema *schemabuilder.Schema) {
 	payload.FieldFunc("game", func(ctx context.Context, in *Value) string {
 		return in.Game
 	})
+
 }
 
 func RegisterPayloadCreateClassReq(schema *schemabuilder.Schema) {
@@ -231,6 +238,7 @@ func RegisterPayloadCreateClassReq(schema *schemabuilder.Schema) {
 	payload.FieldFunc("class", func(ctx context.Context, in *CreateClassReq) *Class {
 		return in.Class
 	})
+
 }
 
 func RegisterPayloadGetClassReq(schema *schemabuilder.Schema) {
@@ -240,8 +248,9 @@ func RegisterPayloadGetClassReq(schema *schemabuilder.Schema) {
 		return schemabuilder.ID{Value: in.Id}
 	})
 	payload.FieldFunc("viewMask", func(ctx context.Context, in *GetClassReq) *field_mask.FieldMask {
-		return in.ViewMask
+		return gtypes.ModifyFieldMask(in.ViewMask)
 	})
+
 }
 
 func RegisterPayloadServiceProvider(schema *schemabuilder.Schema) {
@@ -253,6 +262,7 @@ func RegisterPayloadServiceProvider(schema *schemabuilder.Schema) {
 	payload.FieldFunc("firstName", func(ctx context.Context, in *ServiceProvider) string {
 		return in.FirstName
 	})
+
 }
 
 type CreateClassInput struct {
@@ -302,7 +312,7 @@ func RegisterClassesOperations(schema *schemabuilder.Schema, client ClassesClien
 		request := &GetClassReq{
 
 			Id:       args.Id.Value,
-			ViewMask: args.ViewMask,
+			ViewMask: gtypes.ModifyFieldMask(args.ViewMask),
 		}
 
 		return client.GetClass(ctx, request)
@@ -326,23 +336,23 @@ func RegisterClassesOperations(schema *schemabuilder.Schema, client ClassesClien
 
 }
 
-func init() {
+// func init() {
 
-	RegisterClassType(gtypes.Schema)
-	RegisterInputClass(gtypes.Schema)
-	RegisterInputClass_Lumpsum(gtypes.Schema)
-	RegisterInputClass_PerInstance(gtypes.Schema)
-	RegisterInputCreateClassInput(gtypes.Schema)
-	RegisterInputCreateClassReq(gtypes.Schema)
-	RegisterInputGetClassReq(gtypes.Schema)
-	RegisterInputServiceProvider(gtypes.Schema)
-	RegisterInputValue(gtypes.Schema)
-	RegisterPayloadClass(gtypes.Schema)
-	RegisterPayloadClass_Lumpsum(gtypes.Schema)
-	RegisterPayloadClass_PerInstance(gtypes.Schema)
-	RegisterPayloadCreateClassPayload(gtypes.Schema)
-	RegisterPayloadCreateClassReq(gtypes.Schema)
-	RegisterPayloadGetClassReq(gtypes.Schema)
-	RegisterPayloadServiceProvider(gtypes.Schema)
-	RegisterPayloadValue(gtypes.Schema)
-}
+// 	RegisterClassType(gtypes.Schema)
+// 	RegisterInputClass(gtypes.Schema)
+// 	RegisterInputClass_Lumpsum(gtypes.Schema)
+// 	RegisterInputClass_PerInstance(gtypes.Schema)
+// 	RegisterInputCreateClassInput(gtypes.Schema)
+// 	RegisterInputCreateClassReq(gtypes.Schema)
+// 	RegisterInputGetClassReq(gtypes.Schema)
+// 	RegisterInputServiceProvider(gtypes.Schema)
+// 	RegisterInputValue(gtypes.Schema)
+// 	RegisterPayloadClass(gtypes.Schema)
+// 	RegisterPayloadClass_Lumpsum(gtypes.Schema)
+// 	RegisterPayloadClass_PerInstance(gtypes.Schema)
+// 	RegisterPayloadCreateClassPayload(gtypes.Schema)
+// 	RegisterPayloadCreateClassReq(gtypes.Schema)
+// 	RegisterPayloadGetClassReq(gtypes.Schema)
+// 	RegisterPayloadServiceProvider(gtypes.Schema)
+// 	RegisterPayloadValue(gtypes.Schema)
+// }

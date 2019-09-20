@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
-
 	"go.appointy.com/jaal"
 	"go.appointy.com/jaal/schemabuilder"
 )
@@ -41,7 +40,7 @@ func TestHTTPMustPost(t *testing.T) {
 		t.Errorf("expected 200, but received %d", rr.Code)
 	}
 
-	if diff := pretty.Compare(rr.Body.String(), "{\"data\":null,\"errors\":[\"request must be a POST\"]}"); diff != "" {
+	if diff := pretty.Compare(rr.Body.String(), `{"data":null,"errors":[{"message":"request must be a POST","extensions":{"code":"Unknown"},"paths":[]}]}`); diff != "" {
 		t.Errorf("expected response to match, but received %s", diff)
 	}
 }
@@ -58,7 +57,7 @@ func TestHTTPParseQuery(t *testing.T) {
 		t.Errorf("expected 200, but received %d", rr.Code)
 	}
 
-	if diff := pretty.Compare(rr.Body.String(), "{\"data\":null,\"errors\":[\"request must include a query\"]}"); diff != "" {
+	if diff := pretty.Compare(rr.Body.String(), `{"data":null,"errors":[{"message":"request must include a query","extensions":{"code":"Unknown"},"paths":[]}]}`); diff != "" {
 		t.Errorf("expected response to match, but received %s", diff)
 	}
 }
@@ -75,7 +74,7 @@ func TestHTTPMustHaveQuery(t *testing.T) {
 		t.Errorf("expected 200, but received %d", rr.Code)
 	}
 
-	if diff := pretty.Compare(rr.Body.String(), "{\"data\":null,\"errors\":[\"must have a single query\"]}"); diff != "" {
+	if diff := pretty.Compare(rr.Body.String(), `{"data":null,"errors":[{"message":"must have a single query","extensions":{"code":"Unknown"},"paths":[]}]}`); diff != "" {
 		t.Errorf("expected response to match, but received %s", diff)
 	}
 }

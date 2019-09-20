@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+
+	"go.appointy.com/jaal/internal"
 )
 
 type ComputationInput struct {
@@ -109,7 +111,7 @@ func (e *Executor) executeUnion(ctx context.Context, typ *Union, source interfac
 				if err == ErrNoUpdate {
 					return nil, err
 				}
-				return nil, fmt.Errorf("%v - %v", typString, err)
+				return nil, internal.NestErrorPaths(err, typString)
 			}
 
 			for k, v := range resolved.(map[string]interface{}) {
@@ -144,7 +146,7 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 			if err == ErrNoUpdate {
 				return nil, err
 			}
-			return nil, fmt.Errorf("%s - %s", selection.Alias, err)
+			return nil, internal.NestErrorPaths(err, selection.Alias)
 		} else if !ok {
 			continue
 		}
@@ -160,7 +162,7 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 			if err == ErrNoUpdate {
 				return nil, err
 			}
-			return nil, fmt.Errorf("%v - %v", selection.Alias, err)
+			return nil, internal.NestErrorPaths(err, selection.Alias)
 		}
 		fields[selection.Alias] = resolved
 	}
@@ -168,7 +170,7 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 	if typ.KeyField != nil {
 		value, err := e.resolveAndExecute(ctx, typ.KeyField, source, &Selection{})
 		if err != nil {
-			return nil, fmt.Errorf("%v - %v", "__key", err)
+			return nil, internal.NestErrorPaths(err, "__key")
 		}
 		fields["__key"] = value
 	}
@@ -216,7 +218,7 @@ func (e *Executor) executeList(ctx context.Context, typ *List, source interface{
 			if err == ErrNoUpdate {
 				return nil, err
 			}
-			return nil, fmt.Errorf("%v - %v", fmt.Sprint(i), err)
+			return nil, internal.NestErrorPaths(err, fmt.Sprint(i))
 		}
 		items[i] = resolved
 	}
@@ -263,14 +265,14 @@ func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source 
 				if err == ErrNoUpdate {
 					return nil, err
 				}
-				return nil, fmt.Errorf("%s - %s", selection.Alias, err)
+				return nil, internal.NestErrorPaths(err, selection.Alias)
 			}
 			fields[selection.Alias] = resolved
 		}
 	}
-	if len(possibleTypes) > 1 {
-		return nil, fmt.Errorf("interface type field should only return one value, but received: %s", strings.Join(possibleTypes, " "))
-	}
+	// if len(possibleTypes) > 1 {
+	// 	return nil, fmt.Errorf("interface type field should only return one value, but received: %s", strings.Join(possibleTypes, " "))
+	// }
 	return fields, nil
 }
 

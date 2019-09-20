@@ -1,11 +1,13 @@
 package schemabuilder
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"reflect"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"go.appointy.com/jaal/graphql"
 )
@@ -49,143 +51,6 @@ func nilParseArguments(args interface{}) (interface{}, error) {
 	return nil, nil
 }
 
-// makeStructParser constructs an argParser for the passed in struct type.
-func (sb *schemaBuilder) makeStructParser(typ reflect.Type) (*argParser, graphql.Type, error) {
-	argType, fields, err := sb.getStructObjectFields(typ)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return &argParser{
-		FromJSON: func(value interface{}, dest reflect.Value) error {
-			asMap, ok := value.(map[string]interface{})
-			if !ok {
-				return errors.New("not an object")
-			}
-
-			for name, field := range fields {
-				value := asMap[name]
-				fieldDest := dest.FieldByIndex(field.field.Index)
-				if err := field.parser.FromJSON(value, fieldDest); err != nil {
-					return fmt.Errorf("%s: %s", name, err)
-				}
-			}
-			for name := range asMap {
-				if _, ok := fields[name]; !ok {
-					return fmt.Errorf("unknown arg %s", name)
-				}
-			}
-
-			return nil
-		},
-		Type: typ,
-	}, argType, nil
-}
-
-// getStructObjectFields loops through a struct's fields and builds argParsers for all the struct's subfields.  These fields will then be used when we want
-// to create an instance of the original struct from JSON.
-func (sb *schemaBuilder) getStructObjectFields(typ reflect.Type) (*graphql.InputObject, map[string]argField, error) {
-	// Check if the struct type is already cached
-	if cached, ok := sb.typeCache[typ]; ok {
-		return cached.argType, cached.fields, nil
-	}
-
-	fields := make(map[string]argField)
-	argType := &graphql.InputObject{
-		Name:        typ.Name(),
-		InputFields: make(map[string]graphql.Type),
-	}
-	// if argType.Name != "" {
-	// 	argType.Name += "_InputObject"
-	// }
-
-	if typ.Kind() != reflect.Struct {
-		return nil, nil, fmt.Errorf("expected struct but received type %s", typ.Name())
-	}
-
-	// Cache type information ahead of time to catch self-reference
-	sb.typeCache[typ] = cachedType{argType, fields}
-
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		if field.Anonymous {
-			return nil, nil, fmt.Errorf("bad arg type %s: anonymous fields not supported", typ)
-		}
-
-		fieldInfo, err := parseGraphQLFieldInfo(field)
-		if err != nil {
-			return nil, nil, fmt.Errorf("bad type %s: %s", typ, err.Error())
-		}
-		if fieldInfo.Skipped {
-			continue
-		}
-
-		if _, ok := fields[fieldInfo.Name]; ok {
-			return nil, nil, fmt.Errorf("bad arg type %s: duplicate field %s", typ, fieldInfo.Name)
-		}
-		parser, fieldArgTyp, err := sb.makeArgParser(field.Type)
-		if err != nil {
-			return nil, nil, err
-		}
-		if fieldInfo.OptionalInputField {
-			parser, fieldArgTyp = wrapWithZeroValue(parser, fieldArgTyp)
-		}
-
-		fields[fieldInfo.Name] = argField{
-			field:  field,
-			parser: parser,
-		}
-		argType.InputFields[fieldInfo.Name] = fieldArgTyp
-	}
-
-	return argType, fields, nil
-}
-
-// makeArgParser reads the information on a passed in variable type and returns an ArgParser that can be used to "fill" that type from a GraphQL JSON input.
-func (sb *schemaBuilder) makeArgParser(typ reflect.Type) (*argParser, graphql.Type, error) {
-	if typ.Kind() == reflect.Ptr {
-		parser, argType, err := sb.makeArgParserInner(typ.Elem())
-		if err != nil {
-			return nil, nil, err
-		}
-		return wrapPtrParser(parser), argType, nil
-	}
-
-	parser, argType, err := sb.makeArgParserInner(typ)
-	if err != nil {
-		return nil, nil, err
-	}
-	return parser, &graphql.NonNull{Type: argType}, nil
-}
-
-// makeArgParserInner is a helper function for makeArgParser that doesn't need to worry about pointer types.
-func (sb *schemaBuilder) makeArgParserInner(typ reflect.Type) (*argParser, graphql.Type, error) {
-	if sb.enumMappings[typ] != nil {
-		parser, argType := sb.getEnumArgParser(typ)
-		return parser, argType, nil
-	}
-
-	if parser, argType, ok := getScalarArgParser(typ); ok {
-		return parser, argType, nil
-	}
-
-	switch typ.Kind() {
-	case reflect.Struct:
-		parser, argType, err := sb.makeStructParser(typ)
-		if err != nil {
-			return nil, nil, err
-		}
-		if argType.(*graphql.InputObject).Name == "" {
-			return nil, nil, fmt.Errorf("bad type %s: should have a name", typ)
-		}
-		return parser, argType, nil
-	case reflect.Slice:
-		return sb.makeSliceParser(typ)
-	default:
-		return nil, nil, fmt.Errorf("bad arg type %s: should be struct, scalar, pointer, or a slice", typ)
-	}
-}
-
 // wrapPtrParser wraps an ArgParser with a helper that will convert the parsed type into a pointer type.
 func wrapPtrParser(inner *argParser) *argParser {
 	return &argParser{
@@ -225,34 +90,6 @@ func (sb *schemaBuilder) getEnumArgParser(typ reflect.Type) (*argParser, graphql
 		return nil
 	}, Type: typ}, &graphql.Enum{Type: typ.Name(), Values: values, ReverseMap: sb.enumMappings[typ].ReverseMap}
 
-}
-
-// makeSliceParser creates an arg parser for a slice field.
-func (sb *schemaBuilder) makeSliceParser(typ reflect.Type) (*argParser, graphql.Type, error) {
-	inner, argType, err := sb.makeArgParser(typ.Elem())
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return &argParser{
-		FromJSON: func(value interface{}, dest reflect.Value) error {
-			asSlice, ok := value.([]interface{})
-			if !ok {
-				return errors.New("not a list")
-			}
-
-			dest.Set(reflect.MakeSlice(typ, len(asSlice), len(asSlice)))
-
-			for i, value := range asSlice {
-				if err := inner.FromJSON(value, dest.Index(i)); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		},
-		Type: typ,
-	}, &graphql.List{Type: argType}, nil
 }
 
 // wrapWithZeroValue wraps an ArgParser with a helper that will convert non- provided parameters into the argParser's zero value (basically do nothing).
@@ -304,7 +141,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asBool, ok := value.(bool)
 			if !ok {
-				asBool = false
+				if value == nil {
+					asBool = false
+				} else {
+					return errors.New("not a bool")
+				}
 			}
 			dest.Set(reflect.ValueOf(asBool).Convert(dest.Type()))
 			return nil
@@ -314,7 +155,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(asFloat).Convert(dest.Type()))
 			return nil
@@ -324,7 +169,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(float32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -334,7 +183,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int64(asFloat)).Convert(dest.Type()))
 			return nil
@@ -344,7 +197,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -354,7 +211,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int16(asFloat)).Convert(dest.Type()))
 			return nil
@@ -364,7 +225,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int8(asFloat)).Convert(dest.Type()))
 			return nil
@@ -374,7 +239,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(int64(asFloat)).Convert(dest.Type()))
 			return nil
@@ -384,7 +253,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(uint32(asFloat)).Convert(dest.Type()))
 			return nil
@@ -394,7 +267,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(uint16(asFloat)).Convert(dest.Type()))
 			return nil
@@ -404,7 +281,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asFloat, ok := value.(float64)
 			if !ok {
-				asFloat = 0.0
+				if value == nil {
+					asFloat = 0
+				} else {
+					return errors.New("not a number")
+				}
 			}
 			dest.Set(reflect.ValueOf(uint8(asFloat)).Convert(dest.Type()))
 			return nil
@@ -414,7 +295,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			asString, ok := value.(string)
 			if !ok {
-				asString = ""
+				if value == nil {
+					asString = ""
+				} else {
+					return errors.New("not a string")
+				}
 			}
 			dest.Set(reflect.ValueOf(asString).Convert(dest.Type()))
 			return nil
@@ -424,7 +309,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				v = ""
+				if value == nil {
+					v = ""
+				} else {
+					return errors.New("not a string")
+				}
 			}
 
 			dest.Field(0).SetString(v)
@@ -435,7 +324,11 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				v = ""
+				if value == nil {
+					v = ""
+				} else {
+					return errors.New("not a string")
+				}
 			}
 
 			dest.Field(0).SetString(v)
@@ -446,7 +339,7 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 		FromJSON: func(value interface{}, dest reflect.Value) error {
 			v, ok := value.(string)
 			if !ok {
-				return errors.New("invalid type expected a string")
+				return errors.New("invalid type expected string")
 			}
 
 			t, err := time.Parse(time.RFC3339, v)
@@ -454,8 +347,36 @@ var scalarArgParsers = map[reflect.Type]*argParser{
 				return err
 			}
 
-			dest.Field(0).SetInt(int64(t.Second()))
+			dest.Field(0).SetInt(int64(t.Unix()))
 			dest.Field(1).SetInt(int64(t.Nanosecond()))
+			return nil
+		},
+	},
+	reflect.TypeOf(Duration(duration.Duration{})): {
+		FromJSON: func(value interface{}, dest reflect.Value) error {
+			v, ok := value.(float64)
+			if !ok {
+				return errors.New("invalid type expected number")
+			}
+
+			dest.Field(0).SetInt(int64(v))
+			dest.Field(1).SetInt(int64(0))
+			return nil
+		},
+	},
+	reflect.TypeOf(Bytes{Value: []byte{}}): {
+		FromJSON: func(value interface{}, dest reflect.Value) error {
+			v, ok := value.(string)
+			if !ok {
+				return errors.New("invalid type expected string")
+			}
+
+			decodedValue, err := base64.StdEncoding.DecodeString(v)
+			if err != nil {
+				return err
+			}
+
+			dest.Field(0).Set(reflect.ValueOf(decodedValue))
 			return nil
 		},
 	},

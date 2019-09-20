@@ -1,6 +1,7 @@
 package schemabuilder
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
@@ -126,9 +128,18 @@ func (s *Object) FieldFunc(name string, f interface{}) {
 // The target variable of the function should be pointer
 func (io *InputObject) FieldFunc(name string, function interface{}) {
 	funcTyp := reflect.TypeOf(function)
+
+	if funcTyp.NumIn() != 2 {
+		panic(fmt.Errorf("can not register field %v on %v as number of input argument should be 2", name, io.Name))
+	}
+
 	sourceTyp := funcTyp.In(0)
 	if sourceTyp.Kind() != reflect.Ptr {
-		panic(fmt.Sprintf("Can not register %s on input object %s as the first argument of the function is not a pointer type", name, io.Name))
+		panic(fmt.Errorf("can not register %s on input object %s as the first argument of the function is not a pointer type", name, io.Name))
+	}
+
+	if funcTyp.NumOut() > 2 {
+		panic(fmt.Errorf("can not register field %v on %v as number of output parameters should be less than 2", name, io.Name))
 	}
 
 	io.Fields[name] = function
@@ -250,5 +261,32 @@ type Map struct {
 
 // MarshalJSON implements JSON Marshalling used to generate the output
 func (m Map) MarshalJSON() ([]byte, error) {
-	return []byte(m.Value), nil
+	v := base64.StdEncoding.EncodeToString([]byte(m.Value))
+	d, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+//Duration handles the duration
+type Duration duration.Duration
+
+// MarshalJSON implements JSON Marshalling used to generate the output
+func (d Duration) MarshalJSON() ([]byte, error) {
+	return []byte(strconv.Itoa(int(d.Seconds))), nil
+}
+
+//Bytes handles the duration
+type Bytes struct {
+	Value []byte
+}
+
+// MarshalJSON implements JSON Marshalling used to generate the output
+func (b Bytes) MarshalJSON() ([]byte, error) {
+	data, err := json.Marshal(b.Value)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

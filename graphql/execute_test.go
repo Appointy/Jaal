@@ -9,6 +9,8 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/internal"
+	"go.appointy.com/jaal/schemabuilder"
+	"google.golang.org/grpc/codes"
 )
 
 func makeQuery(onArgParse *func()) *graphql.Object {
@@ -215,7 +217,68 @@ func TestError(t *testing.T) {
 	}
 
 	e := graphql.Executor{}
-	if _, err := e.Execute(context.Background(), query, nil, q); err == nil || err.Error() != "error - test error" {
+	if _, err := e.Execute(context.Background(), query, nil, q); err == nil ||
+		!reflect.DeepEqual(err, &internal.Error{Message: "test error", Paths: []string{"error"}, Extensions: &internal.Extension{Code: codes.Unknown.String()}}) {
 		t.Error("expected test error")
+	}
+}
+
+func TestErrorCases(t *testing.T) {
+	type object struct{}
+
+	schema := schemabuilder.NewSchema()
+
+	query := schema.Query()
+	query.FieldFunc("string", func() string { return "hello" })
+	query.FieldFunc("object", func(ctx context.Context) object {
+		return object{}
+	})
+
+	payload := schema.Object("Struct", object{})
+	payload.FieldFunc("number", func() int32 { return 10 })
+	payload.FieldFunc("array", func() []int32 { return []int32{10} })
+
+	builtSchema := schema.MustBuild()
+
+	execute := func(queryString string, vars map[string]interface{}) (interface{}, error) {
+		q, err := graphql.Parse(queryString, vars)
+		if err != nil {
+			panic(err)
+		}
+
+		if err := graphql.ValidateQuery(context.Background(), builtSchema.Query, q.SelectionSet); err != nil {
+			return nil, err
+		}
+
+		e := graphql.Executor{}
+		return e.Execute(context.Background(), builtSchema.Query, nil, q)
+	}
+
+	if _, err := execute(`
+		query x {
+			string @include
+		}`, map[string]interface{}{"var": "hi"}); err == nil ||
+		!reflect.DeepEqual(err, &internal.Error{Message: "required argument not provided: if", Paths: []string{"string"}, Extensions: &internal.Extension{Code: codes.Unknown.String()}}) {
+		t.Errorf("err, received %s", err)
+	}
+
+	if _, err := execute(`
+		query x {
+			object{
+				number @include
+			}
+		}`, map[string]interface{}{"var": "hi"}); err == nil ||
+		!reflect.DeepEqual(err, &internal.Error{Message: "required argument not provided: if", Paths: []string{"object", "number"}, Extensions: &internal.Extension{Code: codes.Unknown.String()}}) {
+		t.Errorf("err, received %s", err)
+	}
+
+	if _, err := execute(`
+		query x {
+			object{
+				array @include
+			}
+		}`, map[string]interface{}{"var": "hi"}); err == nil ||
+		!reflect.DeepEqual(err, &internal.Error{Message: "required argument not provided: if", Paths: []string{"object", "array"}, Extensions: &internal.Extension{Code: codes.Unknown.String()}}) {
+		t.Errorf("err, received %s", err)
 	}
 }

@@ -121,6 +121,10 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 		return sb.getInputFieldParser(typ)
 	}
 
+	if typ.Kind() == reflect.Slice {
+		return sb.generateSliceParser(typ)
+	}
+
 	if _, ok := sb.inputObjects[typ]; !ok {
 		return nil, nil, fmt.Errorf("%s not registered as input object", typ.Name())
 	}
@@ -131,7 +135,6 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 		Name:        obj.Name,
 		InputFields: make(map[string]graphql.Type),
 	}
-	//TODO: While adding field in input object, add a validation of matching the types i.e. the target is same as that of input object and is a ptr type
 
 	for name, function := range obj.Fields {
 		field := reflect.StructField{Name: name}
@@ -172,7 +175,14 @@ func (sb *schemaBuilder) generateObjectParserInner(typ reflect.Type) (*argParser
 					return fmt.Errorf("%s : %s", name, err)
 				}
 
-				reflect.ValueOf(function).Call([]reflect.Value{target, source})
+				output := reflect.ValueOf(function).Call([]reflect.Value{target, source})
+				if len(output) > 0 {
+					o := output[0].Interface()
+					if o != nil {
+						return output[0].Interface().(error)
+					}
+				}
+
 			}
 
 			dest.Set(target.Elem())
