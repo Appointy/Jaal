@@ -9,11 +9,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gorilla/websocket"
-	"gocloud.dev/pubsub"
+	"go.appointy.com/jaal/internal"
 
+	"github.com/gorilla/websocket"
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/schemabuilder"
+	"gocloud.dev/pubsub"
 )
 
 // HTTPSubHandler implements the handler required for executing the graphql subscriptions
@@ -243,12 +244,12 @@ func writeResponse(w *webConn, typ, id string, r interface{}, er error) error {
 	var err error
 	if typ == "data" {
 		if er != nil {
-			payload, err = json.Marshal(httpResponse{Data: r, Errors: []string{er.Error()}})
+			payload, err = json.Marshal(httpResponse{Data: r, Errors: []*internal.Error{internal.ConvertError(er)}})
 			if err != nil {
 				return err
 			}
 		} else {
-			payload, err = json.Marshal(httpResponse{Data: r, Errors: []string{}})
+			payload, err = json.Marshal(httpResponse{Data: r, Errors: []*internal.Error{}})
 			if err != nil {
 				return err
 			}
