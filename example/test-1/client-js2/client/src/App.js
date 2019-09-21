@@ -8,7 +8,7 @@ function App() {
     query: gql`
       subscription test{
           channelStream(in: {name: "Serial Killer"}) {
-            nam
+            name
             email
           }
       }`,
