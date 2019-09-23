@@ -9,17 +9,23 @@ import (
 	"go.appointy.com/jaal/internal"
 )
 
-//HTTPHandler implements the handler required for executing the graphql queries
+// HTTPHandler implements the handler required for executing the graphql queries and mutations
 func HTTPHandler(schema *graphql.Schema) http.Handler {
 	return &httpHandler{
-		schema:   schema,
-		executor: &graphql.Executor{},
+		handler{
+			schema:   schema,
+			executor: &graphql.Executor{},
+		},
 	}
 }
 
-type httpHandler struct {
+type handler struct {
 	schema   *graphql.Schema
 	executor *graphql.Executor
+}
+
+type httpHandler struct {
+	handler
 }
 
 type httpPostBody struct {
@@ -78,11 +84,11 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if query.Kind == "mutation" {
 		schema = h.schema.Mutation
 	}
+
 	if err := graphql.ValidateQuery(r.Context(), schema, query.SelectionSet); err != nil {
 		writeResponse(nil, err)
 		return
 	}
-
 	output, err := h.executor.Execute(r.Context(), schema, nil, query)
 	if err != nil {
 		writeResponse(nil, err)

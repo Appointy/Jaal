@@ -41,5 +41,6 @@ message MethodOptions {
     oneof type {
         string query = 1;
         string mutation = 2;
+        string subscription = 3;
     }
 }

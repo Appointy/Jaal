@@ -11,9 +11,10 @@ import (
 )
 
 type introspection struct {
-	types    map[string]graphql.Type
-	query    graphql.Type
-	mutation graphql.Type
+	types        map[string]graphql.Type
+	query        graphql.Type
+	mutation     graphql.Type
+	subscription graphql.Type
 }
 
 type DirectiveLocation string
@@ -499,10 +500,11 @@ func (s *introspection) registerQuery(schema *schemabuilder.Schema) {
 		sort.Slice(types, func(i, j int) bool { return types[i].Inner.String() < types[j].Inner.String() })
 
 		return &Schema{
-			Types:        types,
-			QueryType:    &Type{Inner: s.query},
-			MutationType: &Type{Inner: s.mutation},
-			Directives:   []Directive{includeDirective, skipDirective},
+			Types:            types,
+			QueryType:        &Type{Inner: s.query},
+			MutationType:     &Type{Inner: s.mutation},
+			SubscriptionType: &Type{Inner: s.subscription},
+			Directives:       []Directive{includeDirective, skipDirective},
 		}
 	})
 
@@ -518,12 +520,17 @@ func (s *introspection) registerMutation(schema *schemabuilder.Schema) {
 	schema.Mutation()
 }
 
+func (s *introspection) registerSubscription(schema *schemabuilder.Schema) {
+	schema.Subscription()
+}
+
 func (s *introspection) schema() *graphql.Schema {
 	schema := schemabuilder.NewSchema()
 	s.registerDirective(schema)
 	s.registerEnumValue(schema)
 	s.registerField(schema)
 	s.registerInputValue(schema)
+	s.registerSubscription(schema)
 	s.registerMutation(schema)
 	s.registerQuery(schema)
 	s.registerSchema(schema)
@@ -537,10 +544,12 @@ func AddIntrospectionToSchema(schema *graphql.Schema) {
 	types := make(map[string]graphql.Type)
 	collectTypes(schema.Query, types)
 	collectTypes(schema.Mutation, types)
+	collectTypes(schema.Subscription, types)
 	is := &introspection{
-		types:    types,
-		query:    schema.Query,
-		mutation: schema.Mutation,
+		types:        types,
+		query:        schema.Query,
+		mutation:     schema.Mutation,
+		subscription: schema.Subscription,
 	}
 	isSchema := is.schema()
 

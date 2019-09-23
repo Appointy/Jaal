@@ -34,7 +34,7 @@ func (s *Object) Key(f string) {
 	s.key = f
 }
 
-// InputObject represents the input objects passed in queries and mutations
+// InputObject represents the input objects passed in queries,mutations and subscriptions
 type InputObject struct {
 	Name   string
 	Type   interface{}

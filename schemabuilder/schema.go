@@ -8,7 +8,7 @@ import (
 )
 
 // Schema is a struct that can be used to build out a GraphQL schema.  Functions
-// can be registered against the "Mutation" and "Query" objects in order to
+// can be registered against the "Mutation", "Query" and "Subscription" objects in order to
 // build out a full GraphQL schema.
 type Schema struct {
 	objects      map[string]*Object
@@ -142,14 +142,24 @@ func (s *Schema) Query() *Object {
 type mutation struct{}
 
 // Mutation returns an Object struct that we can use to register all the top level
-// graphql mutations functions we'd like to expose.
+// graphql mutation functions we'd like to expose.
 func (s *Schema) Mutation() *Object {
 	return s.Object("Mutation", mutation{})
 }
 
-// Build takes the schema we have built on our Query and Mutation starting points and builds a full graphql.Schema
+type Subscription struct {
+	Payload []byte
+}
+
+// Subscription returns an Object struct that we can use to register all the top level
+// graphql subscription functions we'd like to expose.
+func (s *Schema) Subscription() *Object {
+	return s.Object("Subscription", Subscription{})
+}
+
+// Build takes the schema we have built on our Query, Mutation and Subscription starting points and builds a full graphql.Schema
 // We can use graphql.Schema to execute and run queries. Essentially we read through all the methods we've attached to our
-// Query and Mutation Objects and ensure that those functions are returning other Objects that we can resolve in our GraphQL graph.
+// Query, Mutation and Subscription Objects and ensure that those functions are returning other Objects that we can resolve in our GraphQL graph.
 func (s *Schema) Build() (*graphql.Schema, error) {
 	sb := &schemaBuilder{
 		types:        make(map[reflect.Type]graphql.Type),
@@ -193,9 +203,14 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 	if err != nil {
 		return nil, err
 	}
+	subscriptionTyp, err := sb.getType(reflect.TypeOf(&Subscription{}))
+	if err != nil {
+		return nil, err
+	}
 	return &graphql.Schema{
-		Query:    queryTyp,
-		Mutation: mutationTyp,
+		Query:        queryTyp,
+		Mutation:     mutationTyp,
+		Subscription: subscriptionTyp,
 	}, nil
 }
 
