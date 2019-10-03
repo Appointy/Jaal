@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -113,6 +114,7 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	con, err := h.upgrader.Upgrade(w, r, res)
 	if err != nil {
+		log.Println("Request Headers:", r.Header)
 		fmt.Println("failed to upgrade to websocket:", err)
 		return
 	}
