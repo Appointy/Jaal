@@ -107,6 +107,8 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.qmHandler.ServeHTTP(w, r)
 		return
 	}
+	log.Println("Request Headers:", r.Header)
+
 	// Check origin and set response headers
 	h.upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	res := http.Header{}
@@ -114,7 +116,6 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	con, err := h.upgrader.Upgrade(w, r, res)
 	if err != nil {
-		log.Println("Request Headers:", r.Header)
 		fmt.Println("failed to upgrade to websocket:", err)
 		return
 	}
