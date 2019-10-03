@@ -244,7 +244,19 @@ func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source 
 			continue
 		}
 		possibleTypes = append(possibleTypes, graphqlTyp.String())
-		selections, err := Flatten(selectionSet)
+
+		// modifiedSelectionSet selection set contains fragments on typString
+		modifiedSelectionSet := &SelectionSet{
+			Selections: selectionSet.Selections,
+			Fragments:  []*FragmentSpread{},
+		}
+		for _, f := range selectionSet.Fragments {
+			if f.Fragment.On == typString {
+				modifiedSelectionSet.Fragments = append(modifiedSelectionSet.Fragments, f)
+			}
+		}
+
+		selections, err := Flatten(modifiedSelectionSet)
 		if err != nil {
 			return nil, err
 		}
