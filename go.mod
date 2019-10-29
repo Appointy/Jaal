@@ -1,5 +1,7 @@
 module go.appointy.com/jaal
 
+go 1.13
+
 require (
 	cloud.google.com/go v0.39.0
 	github.com/appointy/idgen v0.0.0-20190227121039-a884768ebb9d

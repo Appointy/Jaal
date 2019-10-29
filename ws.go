@@ -13,9 +13,10 @@ import (
 	"go.appointy.com/jaal/internal"
 
 	"github.com/gorilla/websocket"
+	"gocloud.dev/pubsub"
+
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/schemabuilder"
-	"gocloud.dev/pubsub"
 )
 
 // HTTPSubHandler implements the handler required for executing the graphql subscriptions
