@@ -64,8 +64,14 @@ func (sb *schemaBuilder) buildFunctionAndFuncCtx(typ reflect.Type, m *method) (*
 			// Set up function arguments.
 			funcInputArgs := funcCtx.prepareResolveArgs(source, funcCtx.hasArgs, funcRawArgs, ctx, selectionSet)
 
-			// Call the function.
-			funcOutputArgs := callableFunc.Call(funcInputArgs)
+			var funcOutputArgs []reflect.Value
+
+			if funcCtx.returnsFunc {
+
+			} else {
+				// Call the function.
+				funcOutputArgs = callableFunc.Call(funcInputArgs)
+			}
 
 			return funcCtx.extractResultAndErr(funcOutputArgs, retType)
 
@@ -90,6 +96,9 @@ type funcContext struct {
 	funcType  reflect.Type
 	isPtrFunc bool
 	typ       reflect.Type
+
+	returnsFunc    bool
+	wrapperFuncTyp reflect.Type
 }
 
 // getFuncVal returns a reflect.Value of an executable function.
@@ -167,6 +176,11 @@ func (funcCtx *funcContext) parseReturnSignature(m *method) (err error) {
 
 	if len(out) > 0 && out[0] != errType {
 		funcCtx.hasRet = true
+
+		if out[0].Kind() == reflect.Func {
+			funcCtx.returnsFunc = true
+		}
+
 		out = out[1:]
 	}
 
@@ -193,6 +207,15 @@ func (funcCtx *funcContext) getReturnType(sb *schemaBuilder, m *method) (graphql
 	var retType graphql.Type
 	if funcCtx.hasRet {
 		var err error
+
+		if funcCtx.returnsFunc {
+			funcCtx.wrapperFuncTyp = funcCtx.typ
+			funcCtx.funcType = funcCtx.funcType.Out(0)
+
+			//Todo: validate return type of function
+
+		}
+
 		retType, err = sb.getType(funcCtx.funcType.Out(0))
 		if err != nil {
 			return nil, err
