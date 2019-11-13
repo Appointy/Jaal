@@ -65,13 +65,7 @@ func (sb *schemaBuilder) buildFunctionAndFuncCtx(typ reflect.Type, m *method) (*
 			funcInputArgs := funcCtx.prepareResolveArgs(source, funcCtx.hasArgs, funcRawArgs, ctx, selectionSet)
 
 			var funcOutputArgs []reflect.Value
-
-			if funcCtx.returnsFunc {
-
-			} else {
-				// Call the function.
-				funcOutputArgs = callableFunc.Call(funcInputArgs)
-			}
+			funcOutputArgs = callableFunc.Call(funcInputArgs)
 
 			return funcCtx.extractResultAndErr(funcOutputArgs, retType)
 
@@ -81,6 +75,15 @@ func (sb *schemaBuilder) buildFunctionAndFuncCtx(typ reflect.Type, m *method) (*
 		ParseArguments: argParser.Parse,
 		Expensive:      funcCtx.hasContext,
 		External:       true,
+		ReturnsFunc:    funcCtx.returnsFunc,
+		LazyResolver: func(ctx context.Context, fun interface{}) (interface{}, error) {
+			callableFunc := reflect.ValueOf(fun)
+
+			var funcOutputArgs []reflect.Value
+			funcOutputArgs = callableFunc.Call([]reflect.Value{})
+
+			return funcCtx.extractResultAndErr(funcOutputArgs, retType)
+		},
 	}, funcCtx, nil
 }
 
@@ -209,11 +212,14 @@ func (funcCtx *funcContext) getReturnType(sb *schemaBuilder, m *method) (graphql
 		var err error
 
 		if funcCtx.returnsFunc {
+			function := funcCtx.funcType.Out(0)
+
+			if function.NumIn() > 0 {
+				return nil, fmt.Errorf("%s should have zero arguments", function)
+			}
+
 			funcCtx.wrapperFuncTyp = funcCtx.typ
-			funcCtx.funcType = funcCtx.funcType.Out(0)
-
-			//Todo: validate return type of function
-
+			funcCtx.funcType = function
 		}
 
 		retType, err = sb.getType(funcCtx.funcType.Out(0))
