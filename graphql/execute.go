@@ -32,7 +32,7 @@ func (e *Executor) Execute(ctx context.Context, typ Type, source interface{}, qu
 	for e.iterate {
 		e.iterate = false
 
-		if err := e.lazyExecution(ctx, response); err != nil {
+		if err := e.lateExecution(ctx, response); err != nil {
 			return nil, err
 		}
 	}
@@ -340,7 +340,7 @@ func shouldIncludeNode(directives []*Directive) (bool, error) {
 	return true, nil
 }
 
-func (e *Executor) lazyExecution(ctx context.Context, response interface{}) error {
+func (e *Executor) lateExecution(ctx context.Context, response interface{}) error {
 	data := response.(map[string]interface{})
 
 	for key, value := range data {
