@@ -319,7 +319,7 @@ func (s *server) RegisterUnion(schema *schemabuilder.Schema) {
 
 ## protoc-gen-jaal - Develop relay compliant GraphQL servers
 
-protoc-gen-jaal is a protoc plugin which is used to generate jaal APIs. The server built from these APIs is graphQL spec compliant as well as relay compliant. It also handles oneOf by registering it as a Union on the schema.
+[protoc-gen-jaal](https://gitlab.com/appointy/services/protoc-gen-jaal) is a protoc plugin which is used to generate jaal APIs. The server built from these APIs is graphQL spec compliant as well as relay compliant. It also handles oneOf by registering it as a Union on the schema.
 
 ## Contributing
 
