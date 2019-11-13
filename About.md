@@ -12,6 +12,6 @@ This document lists the challenges which led to adoption of GraphQL technology a
 [GraphQL](https://graphql.org/) is a query language for APIs. It exposes a single endpoint for data fetching and allows UI to define their data requirements. Hence, a GraphQL server overcomes all the above mentioned challenges as it only returns the data required. 
 
 ### Goal
-The goal was to develop GraphQL spec compliant server without disturbing Appointy's tech stack. There are various frameworks but none of them is spec compliant and had many different drawbacks. 
+The goal was to develop spec compliant GraphQL server without disturbing Appointy's tech stack. There are various frameworks to develop GraphQL servers but none of them are spec compliant and had many different drawbacks. 
 
 To achieve our goal, we developed Jaal - A spec compliant GraphQL server framework. Jaal exposes various APIs to develop spec compliant GraphQL servers. Along with Jaal, we developed *protoc-gen-jaal* - a protocol buffer plugin to generate the code required to develop a GraphQL server.
