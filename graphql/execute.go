@@ -186,7 +186,7 @@ func (e *Executor) resolveAndExecute(ctx context.Context, field *Field, source i
 	}
 
 	// If a field returns function, then do not execute the function at the moment
-	if field.ReturnsFunc {
+	if field.LazyExecution {
 		e.iterate = true
 		return &computationOutput{
 			Function:  value,

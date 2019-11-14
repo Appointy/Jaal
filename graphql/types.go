@@ -149,8 +149,8 @@ type Field struct {
 	External  bool
 	Expensive bool
 
-	ReturnsFunc  bool
-	LazyResolver func(ctx context.Context, fun interface{}) (interface{}, error)
+	LazyExecution bool
+	LazyResolver  func(ctx context.Context, fun interface{}) (interface{}, error)
 }
 
 //Schema used to validate and resolve the queries

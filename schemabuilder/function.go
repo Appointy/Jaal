@@ -75,7 +75,7 @@ func (sb *schemaBuilder) buildFunctionAndFuncCtx(typ reflect.Type, m *method) (*
 		ParseArguments: argParser.Parse,
 		Expensive:      funcCtx.hasContext,
 		External:       true,
-		ReturnsFunc:    funcCtx.returnsFunc,
+		LazyExecution:  funcCtx.returnsFunc,
 		LazyResolver: func(ctx context.Context, fun interface{}) (interface{}, error) {
 			callableFunc := reflect.ValueOf(fun)
 
