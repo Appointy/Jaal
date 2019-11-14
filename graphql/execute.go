@@ -341,11 +341,26 @@ func shouldIncludeNode(directives []*Directive) (bool, error) {
 }
 
 func (e *Executor) lateExecution(ctx context.Context, response interface{}) error {
-	data := response.(map[string]interface{})
+	list, ok := response.([]interface{})
+	if ok {
+		for _, element := range list {
+			if err := e.lateExecution(ctx, element); err != nil {
+				return err
+			}
+		}
+	}
+
+	data, ok := response.(map[string]interface{})
+	if !ok {
+		return nil
+	}
 
 	for key, value := range data {
 		output, ok := value.(*computationOutput)
 		if !ok {
+			if err := e.lateExecution(ctx, value); err != nil {
+				return err
+			}
 			continue
 		}
 
