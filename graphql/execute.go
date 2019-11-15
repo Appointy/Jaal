@@ -11,24 +11,33 @@ import (
 	"go.appointy.com/jaal/internal"
 )
 
-type ComputationInput struct {
-	Id                   string
-	Query                string
-	ParsedQuery          *Query
-	Variables            map[string]interface{}
-	Ctx                  context.Context
-	Previous             interface{}
-	IsInitialComputation bool
-	Extensions           map[string]interface{}
+type Executor struct {
+	iterate bool
 }
 
-type Executor struct {
+type computationOutput struct {
+	Function  interface{}
+	Field     *Field
+	Selection *Selection
 }
 
 var ErrNoUpdate = errors.New("no update")
 
 func (e *Executor) Execute(ctx context.Context, typ Type, source interface{}, query *Query) (interface{}, error) {
-	return e.execute(ctx, typ, source, query.SelectionSet)
+	response, err := e.execute(ctx, typ, source, query.SelectionSet)
+	if err != nil {
+		return nil, err
+	}
+
+	for e.iterate {
+		e.iterate = false
+
+		if err := e.lateExecution(ctx, response); err != nil {
+			return nil, err
+		}
+	}
+
+	return response, nil
 }
 
 func (e *Executor) execute(ctx context.Context, typ Type, source interface{}, selectionSet *SelectionSet) (interface{}, error) {
@@ -167,14 +176,6 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 		fields[selection.Alias] = resolved
 	}
 
-	if typ.KeyField != nil {
-		value, err := e.resolveAndExecute(ctx, typ.KeyField, source, &Selection{})
-		if err != nil {
-			return nil, internal.NestErrorPaths(err, "__key")
-		}
-		fields["__key"] = value
-	}
-
 	return fields, nil
 }
 
@@ -183,6 +184,17 @@ func (e *Executor) resolveAndExecute(ctx context.Context, field *Field, source i
 	if err != nil {
 		return nil, err
 	}
+
+	// If a field returns function, then do not execute the function at the moment
+	if field.LazyExecution {
+		e.iterate = true
+		return &computationOutput{
+			Function:  value,
+			Field:     field,
+			Selection: selection,
+		}, nil
+	}
+
 	return e.execute(ctx, field.Type, value, selection.SelectionSet)
 }
 
@@ -282,9 +294,7 @@ func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source 
 			fields[selection.Alias] = resolved
 		}
 	}
-	// if len(possibleTypes) > 1 {
-	// 	return nil, fmt.Errorf("interface type field should only return one value, but received: %s", strings.Join(possibleTypes, " "))
-	// }
+
 	return fields, nil
 }
 
@@ -328,4 +338,48 @@ func shouldIncludeNode(directives []*Directive) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (e *Executor) lateExecution(ctx context.Context, response interface{}) error {
+	list, ok := response.([]interface{})
+	if ok {
+		for _, element := range list {
+			if err := e.lateExecution(ctx, element); err != nil {
+				return err
+			}
+		}
+	}
+
+	data, ok := response.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+
+	for key, value := range data {
+		output, ok := value.(*computationOutput)
+		if !ok {
+			if err := e.lateExecution(ctx, value); err != nil {
+				return err
+			}
+			continue
+		}
+
+		resolved, err := e.resolveAndExecuteFunction(ctx, output)
+		if err != nil {
+			return err
+		}
+
+		data[key] = resolved
+	}
+
+	return nil
+}
+
+func (e *Executor) resolveAndExecuteFunction(ctx context.Context, output *computationOutput) (interface{}, error) {
+	value, err := output.Field.LazyResolver(ctx, output.Function)
+	if err != nil {
+		return nil, err
+	}
+
+	return e.execute(ctx, output.Field.Type, value, output.Selection.SelectionSet)
 }

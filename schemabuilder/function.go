@@ -64,8 +64,8 @@ func (sb *schemaBuilder) buildFunctionAndFuncCtx(typ reflect.Type, m *method) (*
 			// Set up function arguments.
 			funcInputArgs := funcCtx.prepareResolveArgs(source, funcCtx.hasArgs, funcRawArgs, ctx, selectionSet)
 
-			// Call the function.
-			funcOutputArgs := callableFunc.Call(funcInputArgs)
+			var funcOutputArgs []reflect.Value
+			funcOutputArgs = callableFunc.Call(funcInputArgs)
 
 			return funcCtx.extractResultAndErr(funcOutputArgs, retType)
 
@@ -75,6 +75,15 @@ func (sb *schemaBuilder) buildFunctionAndFuncCtx(typ reflect.Type, m *method) (*
 		ParseArguments: argParser.Parse,
 		Expensive:      funcCtx.hasContext,
 		External:       true,
+		LazyExecution:  funcCtx.returnsFunc,
+		LazyResolver: func(ctx context.Context, fun interface{}) (interface{}, error) {
+			callableFunc := reflect.ValueOf(fun)
+
+			var funcOutputArgs []reflect.Value
+			funcOutputArgs = callableFunc.Call([]reflect.Value{})
+
+			return funcCtx.extractResultAndErr(funcOutputArgs, retType)
+		},
 	}, funcCtx, nil
 }
 
@@ -90,6 +99,9 @@ type funcContext struct {
 	funcType  reflect.Type
 	isPtrFunc bool
 	typ       reflect.Type
+
+	returnsFunc    bool
+	wrapperFuncTyp reflect.Type
 }
 
 // getFuncVal returns a reflect.Value of an executable function.
@@ -167,6 +179,11 @@ func (funcCtx *funcContext) parseReturnSignature(m *method) (err error) {
 
 	if len(out) > 0 && out[0] != errType {
 		funcCtx.hasRet = true
+
+		if out[0].Kind() == reflect.Func {
+			funcCtx.returnsFunc = true
+		}
+
 		out = out[1:]
 	}
 
@@ -193,6 +210,18 @@ func (funcCtx *funcContext) getReturnType(sb *schemaBuilder, m *method) (graphql
 	var retType graphql.Type
 	if funcCtx.hasRet {
 		var err error
+
+		if funcCtx.returnsFunc {
+			function := funcCtx.funcType.Out(0)
+
+			if function.NumIn() > 0 {
+				return nil, fmt.Errorf("%s should have zero arguments", function)
+			}
+
+			funcCtx.wrapperFuncTyp = funcCtx.typ
+			funcCtx.funcType = function
+		}
+
 		retType, err = sb.getType(funcCtx.funcType.Out(0))
 		if err != nil {
 			return nil, err
