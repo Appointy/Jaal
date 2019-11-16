@@ -10,18 +10,32 @@ import (
 	"go.appointy.com/jaal/internal"
 )
 
-type ClientOptions struct {
-	Header http.Header
-}
-
-type ClientOption func(*ClientOptions)
-
 type Decoder interface {
 	Unmarshal([]byte, interface{}) error
 }
 
-func WithHeader(h http.Header) ClientOption {
-	return func(o *ClientOptions) {
+type defaultDecoder struct{}
+
+func (d *defaultDecoder) Unmarshal(data []byte, v interface{}) error {
+	return json.Unmarshal(data, v)
+}
+
+type ClientOption func(*Client)
+
+func WithDecoder(d Decoder) ClientOption {
+	return func(c *Client) {
+		c.Decoder = d
+	}
+}
+
+type CallOptions struct {
+	Header http.Header
+}
+
+type CallOption func(*CallOptions)
+
+func WithHeader(h http.Header) CallOption {
+	return func(o *CallOptions) {
 		o.Header = h
 	}
 }
@@ -34,16 +48,22 @@ type Client struct {
 	Decoder Decoder
 }
 
-func NewHttpClient(client *http.Client, url string, header http.Header, decoder Decoder) *Client {
-	return &Client{
+func NewHttpClient(client *http.Client, url string, header http.Header, opts ...ClientOption) *Client {
+	c := &Client{
 		HttpClient: client,
 		Url:        url,
 		Header:     header,
-		Decoder:    decoder,
+		Decoder:    &defaultDecoder{},
 	}
+
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	return c
 }
 
-func (c *Client) Do(query string, variables, response interface{}, opts ...ClientOption) error {
+func (c *Client) Do(query string, variables, response interface{}, opts ...CallOption) error {
 	rb := struct {
 		Query     string
 		Variables interface{}
@@ -52,7 +72,7 @@ func (c *Client) Do(query string, variables, response interface{}, opts ...Clien
 		Variables: variables,
 	}
 
-	var opt ClientOptions
+	var opt CallOptions
 	for _, op := range opts {
 		op(&opt)
 	}
@@ -100,11 +120,7 @@ func (c *Client) Do(query string, variables, response interface{}, opts ...Clien
 		return &MultiError{Errors: hr.Errors}
 	}
 
-	if c.Decoder != nil {
-		return c.Decoder.Unmarshal(hr.Data, response)
-	}
-
-	return json.Unmarshal(hr.Data, response)
+	return c.Decoder.Unmarshal(hr.Data, response)
 }
 
 type MultiError struct {
