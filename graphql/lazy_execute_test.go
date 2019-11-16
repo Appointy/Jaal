@@ -3,11 +3,11 @@ package graphql_test
 import (
 	"context"
 	"errors"
-	"github.com/stretchr/testify/assert"
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/internal"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"go.appointy.com/jaal/graphql"
+	"go.appointy.com/jaal/jerrors"
 	"go.appointy.com/jaal/schemabuilder"
 )
 
@@ -265,10 +265,10 @@ func TestLazyExecution(t *testing.T) {
 
 		_, err := execute(query, nil)
 		if err != nil {
-			expected := &internal.Error{
+			expected := &jerrors.Error{
 				Message: "wizard not found",
 				Paths:   []string{"lazyWizard"},
-				Extensions: &internal.Extension{
+				Extensions: &jerrors.Extension{
 					Code: "Unknown",
 				},
 			}

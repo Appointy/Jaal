@@ -10,12 +10,11 @@ import (
 	"strings"
 	"sync"
 
-	"go.appointy.com/jaal/internal"
-
 	"github.com/gorilla/websocket"
 	"gocloud.dev/pubsub"
 
 	"go.appointy.com/jaal/graphql"
+	"go.appointy.com/jaal/jerrors"
 	"go.appointy.com/jaal/schemabuilder"
 )
 
@@ -248,12 +247,12 @@ func writeResponse(w *webConn, typ, id string, r interface{}, er error) error {
 	var err error
 	if typ == "data" {
 		if er != nil {
-			payload, err = json.Marshal(httpResponse{Data: r, Errors: []*internal.Error{internal.ConvertError(er)}})
+			payload, err = json.Marshal(httpResponse{Data: r, Errors: []*jerrors.Error{jerrors.ConvertError(er)}})
 			if err != nil {
 				return err
 			}
 		} else {
-			payload, err = json.Marshal(httpResponse{Data: r, Errors: []*internal.Error{}})
+			payload, err = json.Marshal(httpResponse{Data: r, Errors: []*jerrors.Error{}})
 			if err != nil {
 				return err
 			}

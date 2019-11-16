@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/internal"
+	"go.appointy.com/jaal/jerrors"
 )
 
 // HTTPHandler implements the handler required for executing the graphql queries and mutations
@@ -34,15 +34,15 @@ type httpPostBody struct {
 }
 
 type httpResponse struct {
-	Data   interface{}       `json:"data"`
-	Errors []*internal.Error `json:"errors"`
+	Data   interface{}      `json:"data"`
+	Errors []*jerrors.Error `json:"errors"`
 }
 
 func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	writeResponse := func(value interface{}, err error) {
 		response := httpResponse{}
 		if err != nil {
-			response.Errors = []*internal.Error{internal.ConvertError(err)}
+			response.Errors = []*jerrors.Error{jerrors.ConvertError(err)}
 		} else {
 			response.Data = value
 		}

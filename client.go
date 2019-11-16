@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
-	"go.appointy.com/jaal/internal"
+	"go.appointy.com/jaal/jerrors"
 )
 
 type Decoder interface {
@@ -78,8 +77,8 @@ func (c *Client) Do(query string, variables, response interface{}, opts ...CallO
 	}
 
 	hr := struct {
-		Data   json.RawMessage   `json:"data"`
-		Errors []*internal.Error `json:"errors"`
+		Data   json.RawMessage  `json:"data"`
+		Errors []*jerrors.Error `json:"errors"`
 	}{}
 
 	data, err := json.Marshal(&rb)
@@ -113,27 +112,12 @@ func (c *Client) Do(query string, variables, response interface{}, opts ...CallO
 	}
 
 	if err := json.NewDecoder(res.Body).Decode(&hr); err != nil {
-		return fmt.Errorf("jaal: unable to decode response into graphql std format: %w", err)
+		return fmt.Errorf("jaal: unable to decode response into graphql std format: %v", err)
 	}
 
 	if len(hr.Errors) > 0 {
-		return &MultiError{Errors: hr.Errors}
+		return &jerrors.MultiError{Errors: hr.Errors}
 	}
 
 	return c.Decoder.Unmarshal(hr.Data, response)
-}
-
-type MultiError struct {
-	Errors []*internal.Error
-}
-
-func (e *MultiError) Error() string {
-	var s strings.Builder
-
-	for _, e := range e.Errors {
-		s.WriteString(e.Error())
-		s.WriteString("\n")
-	}
-
-	return s.String()
 }

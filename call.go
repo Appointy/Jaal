@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"time"
 
-	"go.appointy.com/jaal/internal"
+	"go.appointy.com/jaal/jerrors"
 )
 
 // HttpCall sends an HTTP Request to the specified url and returns response in map of map
-func HttpCall(url, query string, variables map[string]interface{}, headers map[string]string) (map[string]interface{}, []*internal.Error) {
+func HttpCall(url, query string, variables map[string]interface{}, headers map[string]string) (map[string]interface{}, []*jerrors.Error) {
 	var (
 		requestBody = httpPostBody{
 			Query:     query,
@@ -26,12 +26,12 @@ func HttpCall(url, query string, variables map[string]interface{}, headers map[s
 
 	requestData, err := json.Marshal(requestBody)
 	if err != nil {
-		return nil, []*internal.Error{internal.ConvertError(err)}
+		return nil, []*jerrors.Error{jerrors.ConvertError(err)}
 	}
 
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(requestData))
 	if err != nil {
-		return nil, []*internal.Error{internal.ConvertError(err)}
+		return nil, []*jerrors.Error{jerrors.ConvertError(err)}
 	}
 
 	for key, value := range headers {
@@ -40,16 +40,16 @@ func HttpCall(url, query string, variables map[string]interface{}, headers map[s
 
 	response, err := client.Do(request)
 	if err != nil {
-		return nil, []*internal.Error{internal.ConvertError(err)}
+		return nil, []*jerrors.Error{jerrors.ConvertError(err)}
 	}
 
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, []*internal.Error{internal.ConvertError(err)}
+		return nil, []*jerrors.Error{jerrors.ConvertError(err)}
 	}
 
 	if err := json.Unmarshal(responseData, &responseBody); err != nil {
-		return nil, []*internal.Error{internal.ConvertError(err)}
+		return nil, []*jerrors.Error{jerrors.ConvertError(err)}
 	}
 
 	if len(responseBody.Errors) > 0 {

@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"go.appointy.com/jaal/internal"
+	"go.appointy.com/jaal/jerrors"
 )
 
 type Executor struct {
@@ -120,7 +120,7 @@ func (e *Executor) executeUnion(ctx context.Context, typ *Union, source interfac
 				if err == ErrNoUpdate {
 					return nil, err
 				}
-				return nil, internal.NestErrorPaths(err, typString)
+				return nil, jerrors.NestErrorPaths(err, typString)
 			}
 
 			for k, v := range resolved.(map[string]interface{}) {
@@ -155,7 +155,7 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 			if err == ErrNoUpdate {
 				return nil, err
 			}
-			return nil, internal.NestErrorPaths(err, selection.Alias)
+			return nil, jerrors.NestErrorPaths(err, selection.Alias)
 		} else if !ok {
 			continue
 		}
@@ -171,7 +171,7 @@ func (e *Executor) executeObject(ctx context.Context, typ *Object, source interf
 			if err == ErrNoUpdate {
 				return nil, err
 			}
-			return nil, internal.NestErrorPaths(err, selection.Alias)
+			return nil, jerrors.NestErrorPaths(err, selection.Alias)
 		}
 		fields[selection.Alias] = resolved
 	}
@@ -230,7 +230,7 @@ func (e *Executor) executeList(ctx context.Context, typ *List, source interface{
 			if err == ErrNoUpdate {
 				return nil, err
 			}
-			return nil, internal.NestErrorPaths(err, fmt.Sprint(i))
+			return nil, jerrors.NestErrorPaths(err, fmt.Sprint(i))
 		}
 		items[i] = resolved
 	}
@@ -289,7 +289,7 @@ func (e *Executor) executeInterface(ctx context.Context, typ *Interface, source 
 				if err == ErrNoUpdate {
 					return nil, err
 				}
-				return nil, internal.NestErrorPaths(err, selection.Alias)
+				return nil, jerrors.NestErrorPaths(err, selection.Alias)
 			}
 			fields[selection.Alias] = resolved
 		}

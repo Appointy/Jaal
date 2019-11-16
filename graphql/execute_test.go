@@ -9,6 +9,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"go.appointy.com/jaal/graphql"
 	"go.appointy.com/jaal/internal"
+	"go.appointy.com/jaal/jerrors"
 	"go.appointy.com/jaal/schemabuilder"
 	"google.golang.org/grpc/codes"
 )
@@ -218,7 +219,7 @@ func TestError(t *testing.T) {
 
 	e := graphql.Executor{}
 	if _, err := e.Execute(context.Background(), query, nil, q); err == nil ||
-		!reflect.DeepEqual(err, &internal.Error{Message: "test error", Paths: []string{"error"}, Extensions: &internal.Extension{Code: codes.Unknown.String()}}) {
+		!reflect.DeepEqual(err, &jerrors.Error{Message: "test error", Paths: []string{"error"}, Extensions: &jerrors.Extension{Code: codes.Unknown.String()}}) {
 		t.Error("expected test error")
 	}
 }
@@ -258,7 +259,7 @@ func TestErrorCases(t *testing.T) {
 		query x {
 			string @include
 		}`, map[string]interface{}{"var": "hi"}); err == nil ||
-		!reflect.DeepEqual(err, &internal.Error{Message: "required argument not provided: if", Paths: []string{"string"}, Extensions: &internal.Extension{Code: codes.Unknown.String()}}) {
+		!reflect.DeepEqual(err, &jerrors.Error{Message: "required argument not provided: if", Paths: []string{"string"}, Extensions: &jerrors.Extension{Code: codes.Unknown.String()}}) {
 		t.Errorf("err, received %s", err)
 	}
 
@@ -268,7 +269,7 @@ func TestErrorCases(t *testing.T) {
 				number @include
 			}
 		}`, map[string]interface{}{"var": "hi"}); err == nil ||
-		!reflect.DeepEqual(err, &internal.Error{Message: "required argument not provided: if", Paths: []string{"object", "number"}, Extensions: &internal.Extension{Code: codes.Unknown.String()}}) {
+		!reflect.DeepEqual(err, &jerrors.Error{Message: "required argument not provided: if", Paths: []string{"object", "number"}, Extensions: &jerrors.Extension{Code: codes.Unknown.String()}}) {
 		t.Errorf("err, received %s", err)
 	}
 
@@ -278,7 +279,7 @@ func TestErrorCases(t *testing.T) {
 				array @include
 			}
 		}`, map[string]interface{}{"var": "hi"}); err == nil ||
-		!reflect.DeepEqual(err, &internal.Error{Message: "required argument not provided: if", Paths: []string{"object", "array"}, Extensions: &internal.Extension{Code: codes.Unknown.String()}}) {
+		!reflect.DeepEqual(err, &jerrors.Error{Message: "required argument not provided: if", Paths: []string{"object", "array"}, Extensions: &jerrors.Extension{Code: codes.Unknown.String()}}) {
 		t.Errorf("err, received %s", err)
 	}
 }
