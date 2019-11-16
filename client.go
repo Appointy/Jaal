@@ -16,6 +16,10 @@ type ClientOptions struct {
 
 type ClientOption func(*ClientOptions)
 
+type Decoder interface {
+	Unmarshal([]byte, interface{}) error
+}
+
 func WithHeader(h http.Header) ClientOption {
 	return func(o *ClientOptions) {
 		o.Header = h
@@ -25,15 +29,17 @@ func WithHeader(h http.Header) ClientOption {
 type Client struct {
 	HttpClient *http.Client
 
-	Url    string
-	Header http.Header
+	Url     string
+	Header  http.Header
+	Decoder Decoder
 }
 
-func NewHttpClient(client *http.Client, url string, header http.Header) *Client {
+func NewHttpClient(client *http.Client, url string, header http.Header, decoder Decoder) *Client {
 	return &Client{
 		HttpClient: client,
 		Url:        url,
 		Header:     header,
+		Decoder:    decoder,
 	}
 }
 
@@ -63,7 +69,7 @@ func (c *Client) Do(query string, variables, response interface{}, opts ...Clien
 
 	req, err := http.NewRequest(http.MethodPost, c.Url, bytes.NewReader(data))
 	if err != nil {
-		return fmt.Errorf("jaal: this is a bug in the library please report: %w", err)
+		return fmt.Errorf("jaal: this is a bug in the library please report: %v", err)
 	}
 	defer req.Body.Close()
 
@@ -92,6 +98,10 @@ func (c *Client) Do(query string, variables, response interface{}, opts ...Clien
 
 	if len(hr.Errors) > 0 {
 		return &MultiError{Errors: hr.Errors}
+	}
+
+	if c.Decoder != nil {
+		return c.Decoder.Unmarshal(hr.Data, response)
 	}
 
 	return json.Unmarshal(hr.Data, response)
