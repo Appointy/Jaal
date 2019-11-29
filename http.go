@@ -1,6 +1,7 @@
 package jaal
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -9,14 +10,33 @@ import (
 	"go.appointy.com/jaal/jerrors"
 )
 
+type HandlerOption func(*handlerOptions)
+
+type handlerOptions struct {
+	Middlewares []MiddlewareFunc
+}
+
 // HTTPHandler implements the handler required for executing the graphql queries and mutations
-func HTTPHandler(schema *graphql.Schema) http.Handler {
-	return &httpHandler{
-		handler{
+func HTTPHandler(schema *graphql.Schema, opts ...HandlerOption) http.Handler {
+	h := &httpHandler{
+		handler: handler{
 			schema:   schema,
 			executor: &graphql.Executor{},
 		},
 	}
+
+	o := handlerOptions{}
+	for _, opt := range opts {
+		opt(&o)
+	}
+
+	prev := h.execute
+	for i := range o.Middlewares {
+		prev = o.Middlewares[len(o.Middlewares)-1-i](prev)
+	}
+	h.exec = prev
+
+	return h
 }
 
 type handler struct {
@@ -26,6 +46,8 @@ type handler struct {
 
 type httpHandler struct {
 	handler
+
+	exec HandlerFunc
 }
 
 type httpPostBody struct {
@@ -80,19 +102,20 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	schema := h.schema.Query
+	root := h.schema.Query
 	if query.Kind == "mutation" {
-		schema = h.schema.Mutation
+		root = h.schema.Mutation
 	}
 
-	if err := graphql.ValidateQuery(r.Context(), schema, query.SelectionSet); err != nil {
+	if err := graphql.ValidateQuery(r.Context(), root, query.SelectionSet); err != nil {
 		writeResponse(nil, err)
 		return
 	}
-	output, err := h.executor.Execute(r.Context(), schema, nil, query)
-	if err != nil {
-		writeResponse(nil, err)
-		return
-	}
-	writeResponse(output, nil)
+
+	output, err := h.exec(r.Context(), root, query)
+	writeResponse(output, err)
+}
+
+func (h *httpHandler) execute(ctx context.Context, root graphql.Type, query *graphql.Query) (interface{}, error) {
+	return h.executor.Execute(ctx, root, nil, query)
 }
