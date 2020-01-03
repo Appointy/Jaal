@@ -91,7 +91,7 @@ func getEnumMap(enumMap interface{}, typ reflect.Type) (map[string]interface{}, 
 func (s *Schema) Object(name string, typ interface{}) *Object {
 	if object, ok := s.objects[name]; ok {
 		if reflect.TypeOf(object.Type) != reflect.TypeOf(typ) {
-			panic("re-registered object with different type")
+			panic("re-registered object with different type" + reflect.TypeOf(object.Type).Name())
 		}
 		return object
 	}
@@ -118,7 +118,7 @@ func (s *Schema) GetObject(name string, typ interface{}) (*Object, error) {
 func (s *Schema) InputObject(name string, typ interface{}) *InputObject {
 	if inputObject, ok := s.inputObjects[name]; ok {
 		if reflect.TypeOf(inputObject.Type) != reflect.TypeOf(typ) {
-			panic("re-registered input object with different type")
+			panic("re-registered input object with different type" + reflect.TypeOf(inputObject.Type).Name())
 		}
 	}
 	inputObject := &InputObject{
