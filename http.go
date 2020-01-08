@@ -77,7 +77,7 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if w.Header().Get("Content-Type") == "" {
 			w.Header().Set("Content-Type", "application/json")
 		}
-		w.Write(responseJSON)
+		_, _ = w.Write(responseJSON)
 	}
 
 	if r.Method != "POST" {
@@ -112,10 +112,30 @@ func (h *httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	output, err := h.exec(r.Context(), root, query)
+	ctx := addVariables(r.Context(), params.Variables)
+
+	output, err := h.exec(ctx, root, query)
 	writeResponse(output, err)
 }
 
 func (h *httpHandler) execute(ctx context.Context, root graphql.Type, query *graphql.Query) (interface{}, error) {
 	return h.executor.Execute(ctx, root, nil, query)
+}
+
+type graphqlVariableKeyType int
+
+const graphqlVariableKey graphqlVariableKeyType = 0
+
+// ExtractVariables is used to returns the variables received as part of the graphql request.
+// This is intended to be used from within the interceptors.
+func ExtractVariables(ctx context.Context) map[string]interface{} {
+	if v := ctx.Value(graphqlVariableKey); v != nil {
+		return v.(map[string]interface{})
+	}
+
+	return nil
+}
+
+func addVariables(ctx context.Context, v map[string]interface{}) context.Context {
+	return context.WithValue(ctx, graphqlVariableKey, v)
 }
