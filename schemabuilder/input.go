@@ -9,7 +9,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"go.appointy.com/jaal/graphql"
+	"go.saastack.io/jaal/graphql"
 )
 
 // argField is a representation of an input parameter field for a function.  It

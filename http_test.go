@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/kylelemons/godebug/pretty"
-	"go.appointy.com/jaal"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal"
+	"go.saastack.io/jaal/schemabuilder"
 )
 
 func testHTTPRequest(req *http.Request) *httptest.ResponseRecorder {

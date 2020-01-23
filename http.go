@@ -6,8 +6,8 @@ import (
 	"errors"
 	"net/http"
 
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/jerrors"
+	"go.saastack.io/jaal/graphql"
+	"go.saastack.io/jaal/jerrors"
 )
 
 type HandlerOption func(*handlerOptions)

@@ -2,7 +2,7 @@ package jaal
 
 import "context"
 
-import "go.appointy.com/jaal/graphql"
+import "go.saastack.io/jaal/graphql"
 
 type HandlerFunc func(context.Context, graphql.Type, *graphql.Query) (interface{}, error)
 

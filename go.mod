@@ -1,4 +1,4 @@
-module go.appointy.com/jaal
+module go.saastack.io/jaal
 
 go 1.13
 

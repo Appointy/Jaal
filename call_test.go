@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal/schemabuilder"
 )
 
 func TestHttpCall(t *testing.T) {

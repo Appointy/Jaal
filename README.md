@@ -27,9 +27,9 @@ import (
     "net/http"
 
     "github.com/google/uuid"
-    "go.appointy.com/jaal"
-    "go.appointy.com/jaal/introspection"
-    "go.appointy.com/jaal/schemabuilder"
+    "go.saastack.io/jaal"
+    "go.saastack.io/jaal/introspection"
+    "go.saastack.io/jaal/schemabuilder"
 )
 
 type Server struct {

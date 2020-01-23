@@ -5,7 +5,7 @@ package graphql;
 
 import "google/protobuf/descriptor.proto";
 
-option go_package="go.appointy.com/jaal/schema";
+option go_package="go.saastack.io/jaal/schema";
 
 extend google.protobuf.MethodOptions {
     // schema is used to tag an rpc as query or mutation.

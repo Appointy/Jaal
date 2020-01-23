@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sort"
 
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal/graphql"
+	"go.saastack.io/jaal/schemabuilder"
 )
 
 type introspection struct {

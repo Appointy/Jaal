@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.appointy.com/jaal/jerrors"
+	"go.saastack.io/jaal/jerrors"
 )
 
 type Decoder interface {

@@ -8,9 +8,9 @@ import (
 	"github.com/kylelemons/godebug/pretty"
 
 	"github.com/stretchr/testify/assert"
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/internal"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal/graphql"
+	"go.saastack.io/jaal/internal"
+	"go.saastack.io/jaal/schemabuilder"
 )
 
 func TestInterface(t *testing.T) {

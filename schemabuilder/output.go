@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"sort"
 
-	"go.appointy.com/jaal/graphql"
+	"go.saastack.io/jaal/graphql"
 )
 
 // buildStruct is a function for building the graphql.Type for a passed in struct type.

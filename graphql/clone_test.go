@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/introspection"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal/graphql"
+	"go.saastack.io/jaal/introspection"
+	"go.saastack.io/jaal/schemabuilder"
 )
 
 func TestClone(t *testing.T) {

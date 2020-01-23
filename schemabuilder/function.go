@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"go.appointy.com/jaal/graphql"
+	"go.saastack.io/jaal/graphql"
 )
 
 // buildFunction takes the reflect type of an object and a method attached to that object to build a GraphQL Field

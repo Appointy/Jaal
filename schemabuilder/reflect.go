@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"go.appointy.com/jaal/graphql"
+	"go.saastack.io/jaal/graphql"
 )
 
 // graphQLFieldInfo contains basic struct field information related to GraphQL.
