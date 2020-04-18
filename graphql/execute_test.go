@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/internal"
-	"go.appointy.com/jaal/jerrors"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal/graphql"
+	"go.saastack.io/jaal/internal"
+	"go.saastack.io/jaal/jerrors"
+	"go.saastack.io/jaal/schemabuilder"
 	"google.golang.org/grpc/codes"
 )
 

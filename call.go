@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"go.appointy.com/jaal/jerrors"
+	"go.saastack.io/jaal/jerrors"
 )
 
 // HttpCall sends an HTTP Request to the specified url and returns response in map of map

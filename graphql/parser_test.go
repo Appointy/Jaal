@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	. "go.appointy.com/jaal/graphql"
+	. "go.saastack.io/jaal/graphql"
 )
 
 func TestParseSupported(t *testing.T) {

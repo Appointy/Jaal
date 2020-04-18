@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/jerrors"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal/graphql"
+	"go.saastack.io/jaal/jerrors"
+	"go.saastack.io/jaal/schemabuilder"
 )
 
 func TestLazyExecution(t *testing.T) {

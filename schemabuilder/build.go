@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/golang/protobuf/ptypes/timestamp"
-	"go.appointy.com/jaal/graphql"
+	"go.saastack.io/jaal/graphql"
 )
 
 // schemaBuilder is a struct for holding all the graph information for types as

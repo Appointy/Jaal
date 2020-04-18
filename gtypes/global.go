@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/iancoleman/strcase"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal/schemabuilder"
 	"google.golang.org/genproto/protobuf/field_mask"
 )
 

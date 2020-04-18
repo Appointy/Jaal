@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/appointy/idgen"
 	"log"
 	"net/http"
 	"strings"
@@ -13,17 +14,17 @@ import (
 	"github.com/gorilla/websocket"
 	"gocloud.dev/pubsub"
 
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/jerrors"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal/graphql"
+	"go.saastack.io/jaal/jerrors"
+	"go.saastack.io/jaal/schemabuilder"
 )
 
 // HTTPSubHandler implements the handler required for executing the graphql subscriptions
-func HTTPSubHandler(schema *graphql.Schema, s *pubsub.Subscription) (http.Handler, func()) {
+func HTTPSubHandler(schema *graphql.Schema, subs *pubsub.Subscription) (http.Handler, func()) {
 	source := make(chan *event)
 	sessions := &sessions{
-		data:  map[string][]chan *event{},
-		chans: map[string][]chan struct{}{},
+		data: map[string]map[string]chan *event{},
+		chans: map[string]map[string]chan struct{}{},
 	}
 	return &httpSubHandler{
 			handler: handler{
@@ -35,7 +36,7 @@ func HTTPSubHandler(schema *graphql.Schema, s *pubsub.Subscription) (http.Handle
 			source:    source,
 			sessions:  sessions,
 		}, func() {
-			go startListening(s, source, func() {
+			go startListening(subs, source, func() {
 				exit(sessions)
 			})
 			go listenSource(source, sessions)
@@ -45,9 +46,9 @@ func HTTPSubHandler(schema *graphql.Schema, s *pubsub.Subscription) (http.Handle
 func listenSource(events chan *event, ss *sessions) {
 	for evt := range events {
 		ss.RLock()
-		for _, v := range ss.data {
-			for _, s := range v {
-				s <- evt
+		for _, mp := range ss.data {
+			for _, v := range mp {
+				v <- evt
 			}
 		}
 		ss.RUnlock()
@@ -58,7 +59,8 @@ func startListening(s *pubsub.Subscription, source chan<- *event, cancel func())
 	for {
 		msg, err := s.Receive(context.Background())
 		if err != nil {
-			fmt.Println("Pubsub failed: ", err)
+			fmt.Println("Pubsub failed with error:", err)
+			fmt.Println("Closing all sessions")
 			cancel()
 			return
 		}
@@ -86,8 +88,8 @@ type event struct {
 
 type sessions struct {
 	sync.RWMutex
-	data  map[string][]chan *event
-	chans map[string][]chan struct{}
+	data  map[string]map[string]chan *event
+	chans map[string]map[string]chan struct{}
 }
 
 type wsMessage struct {
@@ -139,7 +141,8 @@ func (h *httpSubHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if err := writeResponse(conn, "connection_ack", "", nil, nil); err != nil {
+	id := idgen.New("sock")
+	if err := writeResponse(conn, "connection_ack", msg.Id, nil, nil); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -157,7 +160,7 @@ loop:
 		case "start":
 			var gql gqlPayload
 			if err := json.Unmarshal(data.Payload, &gql); err != nil {
-				if err := writeResponse(conn, "connection_error", "", nil, err); err != nil {
+				if err := writeResponse(conn, "connection_error", data.Id, nil, err); err != nil {
 					fmt.Println(err)
 					return
 				}
@@ -192,30 +195,36 @@ loop:
 						Fragments:  query.SelectionSet.Fragments,
 					},
 				}
-				go func(conn *webConn, data *wsMessage, schema graphql.Type, query *graphql.Query, end chan struct{}, w http.ResponseWriter, r *http.Request) {
-					if err := h.serveHTTP(conn, *data, schema, query, end, w, r); err != nil {
-						fmt.Println("Id:", data.Id, ": terminated: ", err)
+				go func(conn *webConn, data *wsMessage, schema graphql.Type, query *graphql.Query, end chan struct{}, w http.ResponseWriter, r *http.Request, id string) {
+					err := h.serveHTTP(conn, *data, schema, query, end, w, r, id)
+					if err := writeResponse(conn, "complete", data.Id, nil, err); err != nil {
+						fmt.Println(err)
 					}
 					h.sessions.Lock()
-					if _, ok := h.sessions.data[data.Id]; ok {
-						if err := writeResponse(conn, "complete", data.Id, nil, nil); err != nil {
-							fmt.Println(err)
-						}
-						fmt.Println("Id:", data.Id, ": terminated.")
+					delete(h.sessions.data[data.Id], id)
+					delete(h.sessions.chans[data.Id], id)
+					if len(h.sessions.data[data.Id]) == 0 {
+						delete(h.sessions.data, data.Id)
+						delete(h.sessions.chans, data.Id)
 					}
-					delete(h.sessions.data, data.Id)
-					delete(h.sessions.chans, data.Id)
 					h.sessions.Unlock()
-				}(conn, &data, schema, modQuery, end, w, r)
+				}(conn, &data, schema, modQuery, end, w, r, id)
 			}
 		case "stop":
 			h.sessions.RLock()
-			for _, v := range h.sessions.chans[data.Id] {
-				v <- struct{}{}
+			if _, ok := h.sessions.chans[data.Id][id]; ok {
+				h.sessions.chans[data.Id][id] <- struct{}{}
 			}
 			h.sessions.RUnlock()
 		case "connection_terminate":
-			exit(h.sessions)
+			h.sessions.RLock()
+			delete(h.sessions.data[data.Id], id)
+			delete(h.sessions.chans[data.Id], id)
+			if len(h.sessions.data[data.Id]) == 0 {
+				delete(h.sessions.data, data.Id)
+				delete(h.sessions.chans, data.Id)
+			}
+			h.sessions.RUnlock()
 			break loop
 		default:
 		}
@@ -223,15 +232,11 @@ loop:
 }
 
 func exit(ss *sessions) {
+	// closing all sessions
 	ss.RLock()
-	for _, v := range ss.chans {
-		for _, s := range v {
-			s <- struct{}{}
-		}
-	}
-	for _, v := range ss.data {
-		for _, s := range v {
-			close(s)
+	for _, chMp := range ss.chans {
+		for _, ch := range chMp {
+			ch <- struct{}{}
 		}
 	}
 	ss.RUnlock()
@@ -258,6 +263,9 @@ func writeResponse(w *webConn, typ, id string, r interface{}, er error) error {
 			}
 		}
 	} else if typ == "error" || typ == "connection_error" {
+		if er == nil {
+			er = errors.New("connection is closed")
+		}
 		str := strings.Replace(er.Error(), "\"", "\\\"", -1)
 		payload = json.RawMessage("{ \"error\" : \"" + str + "\"}")
 	}
@@ -275,26 +283,24 @@ func writeResponse(w *webConn, typ, id string, r interface{}, er error) error {
 	return nil
 }
 
-func (h *httpSubHandler) serveHTTP(conn *webConn, data wsMessage, schema graphql.Type, query *graphql.Query, end chan struct{}, w http.ResponseWriter, r *http.Request) error {
+func (h *httpSubHandler) serveHTTP(conn *webConn, data wsMessage, schema graphql.Type, query *graphql.Query, end chan struct{}, w http.ResponseWriter, r *http.Request, id string) error {
 	sid := data.Id
 	sess := make(chan *event)
 	h.sessions.Lock()
-	h.sessions.data[sid] = append(h.sessions.data[sid], sess)
-	h.sessions.chans[sid] = append(h.sessions.chans[sid], end)
+	if h.sessions.data[sid] == nil {
+		h.sessions.data[sid] = map[string]chan *event{}
+	}
+	h.sessions.data[sid][id] = sess
+	if h.sessions.chans[sid] == nil {
+		h.sessions.chans[sid] = map[string]chan struct{}{}
+	}
+	h.sessions.chans[sid][id] = end
 	h.sessions.Unlock()
 
-	cls := func(ss *sessions, sid string) {
+	cls := func(ss *sessions, sid, id string) {
 		ss.Lock()
-		for _, v := range ss.data[sid] {
-			close(v)
-			for range v {
-			}
-		}
-		for _, v := range ss.chans[sid] {
-			close(v)
-			for range v {
-			}
-		}
+		close(ss.data[sid][id])
+		close(ss.chans[sid][id])
 		ss.Unlock()
 	}
 
@@ -302,25 +308,25 @@ func (h *httpSubHandler) serveHTTP(conn *webConn, data wsMessage, schema graphql
 	for msg := range sess {
 		select {
 		case <-end:
-			cls(h.sessions, sid)
+			cls(h.sessions, sid, id)
 			return nil
 		default:
-			if err := func() error {
-				res, err := h.executor.Execute(r.Context(), schema, &schemabuilder.Subscription{msg.payload}, query)
-				if err == graphql.ErrNoUpdate {
+			// Subscription should have only one root selection
+			// https://spec.graphql.org/June2018/#sec-Single-root-field
+			if len(query.Selections) == 1 && query.Selections[0].Name == msg.typ {
+				if err := func() error {
+					res, err := h.executor.Execute(r.Context(), schema, &schemabuilder.Subscription{Payload: msg.payload}, query)
+					if err == graphql.ErrNoUpdate {
+						return nil
+					}
+					if err := writeResponse(conn, "data", data.Id, res, err); err != nil {
+						return err
+					}
 					return nil
-				}
-				rer := err
-				if err := writeResponse(conn, "data", data.Id, res, rer); err != nil {
+				}(); err != nil {
+					cls(h.sessions, sid, id)
 					return err
 				}
-				if rer != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				cls(h.sessions, sid)
-				return err
 			}
 		}
 	}

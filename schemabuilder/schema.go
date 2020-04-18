@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"go.appointy.com/jaal/graphql"
+	"go.saastack.io/jaal/graphql"
 )
 
 // Schema is a struct that can be used to build out a GraphQL schema.  Functions

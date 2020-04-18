@@ -10,7 +10,7 @@ import (
 
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/parser"
-	"go.appointy.com/jaal/jerrors"
+	"go.saastack.io/jaal/jerrors"
 )
 
 type Query struct {

@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/appointy/idgen"
-	"go.appointy.com/jaal"
-	"go.appointy.com/jaal/graphql"
-	"go.appointy.com/jaal/introspection"
-	"go.appointy.com/jaal/schemabuilder"
+	"go.saastack.io/jaal"
+	"go.saastack.io/jaal/graphql"
+	"go.saastack.io/jaal/introspection"
+	"go.saastack.io/jaal/schemabuilder"
 	"gocloud.dev/pubsub"
 	_ "gocloud.dev/pubsub/mempubsub"
 	"golang.org/x/net/context"
@@ -277,9 +277,6 @@ func main() {
 					fmt.Println(err)
 					return
 				}
-			}
-			if t < 10 {
-				sub.Shutdown(ctx)
 			}
 		}
 	}()

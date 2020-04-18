@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"go.appointy.com/jaal/jerrors"
+	"go.saastack.io/jaal/jerrors"
 )
 
 type Executor struct {
