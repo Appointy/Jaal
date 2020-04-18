@@ -278,9 +278,6 @@ func main() {
 					return
 				}
 			}
-			if t < 10 {
-				sub.Shutdown(ctx)
-			}
 		}
 	}()
 	f()
