@@ -20,7 +20,7 @@
     "http-proxy-middleware": "^0.19.1",
     "immutability-helper": "^2.4.0",
     "node-emoji": "^1.8.1",
-    "node-fetch": "^1.7.3",
+    "node-fetch": "^2.6.1",
     "persistgraphql": "^0.3.11",
     "prop-types": "^15.6.0",
     "react": "^16.8.6",
