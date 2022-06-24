@@ -29,7 +29,7 @@ import (
     "github.com/google/uuid"
     "go.appointy.com/jaal"
     "go.appointy.com/jaal/introspection"
-    "go.appointy.com/jaal/schemabuilder"
+
 )
 
 type Server struct {
