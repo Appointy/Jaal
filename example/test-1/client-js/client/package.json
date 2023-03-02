@@ -20,7 +20,7 @@
     "http-proxy-middleware": "^0.19.1",
     "immutability-helper": "^2.4.0",
     "node-emoji": "^1.8.1",
-    "node-fetch": "^1.7.3",
+    "node-fetch": "^2.6.7",
     "persistgraphql": "^0.3.11",
     "prop-types": "^15.6.0",
     "react": "^16.8.6",
@@ -30,7 +30,7 @@
     "react-native-web": "^0.1.13",
     "react-router": "^4.2.0",
     "react-router-dom": "^4.2.2",
-    "react-scripts": "3.0.1",
+    "react-scripts": "5.0.0",
     "react-timeago": "^3.4.3",
     "subscriptions-transport-ws": "^0.9.16"
   },
