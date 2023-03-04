@@ -17,7 +17,7 @@
     "graphql": "^0.11.7",
     "graphql-anywhere": "^4.0.0",
     "graphql-tag": "^2.10.1",
-    "http-proxy-middleware": "^0.19.1",
+    "http-proxy-middleware": "^0.21.0",
     "immutability-helper": "^2.4.0",
     "node-emoji": "^1.8.1",
     "node-fetch": "^2.6.7",
