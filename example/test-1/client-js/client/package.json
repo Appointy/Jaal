@@ -14,7 +14,7 @@
     "apollo-utilities": "^1.0.1",
     "classnames": "^2.2.5",
     "express": "^4.16.2",
-    "graphql": "^0.11.7",
+    "graphql": "^0.13.2",
     "graphql-anywhere": "^4.0.0",
     "graphql-tag": "^2.10.1",
     "http-proxy-middleware": "^0.19.1",
